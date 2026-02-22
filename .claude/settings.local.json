@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(cp:*)",
+      "Bash(npx expo:*)",
+      "Bash(npm install:*)",
+      "Bash(head:*)"
+    ]
+  }
+}
