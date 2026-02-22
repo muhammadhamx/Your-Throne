@@ -46,8 +46,13 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
+        "projectId": "7c5a8b65-dd43-4351-b9b1-32a7b12f97b3"
+      },
+      "router": {}
+    },
+    "owner": "muhammadhamxa",
+    "updates": {
+      "url": "https://u.expo.dev/7c5a8b65-dd43-4351-b9b1-32a7b12f97b3"
     }
   }
 }
