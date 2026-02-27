@@ -15,8 +15,18 @@ export interface Profile {
   unlocked_title_ids: string[];
   unlocked_achievement_ids: string[];
   reward_session_count: number;
+  credits: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreditTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  reason: 'xp_convert' | 'buddy_match' | 'buddy_chat_unlock';
+  metadata: Record<string, any>;
+  created_at: string;
 }
 
 export interface Session {
@@ -64,6 +74,31 @@ export interface Message {
   sender_id: string;
   content: string;
   created_at: string;
+}
+
+export interface League {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string | null;
+  join_code: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface LeagueMember {
+  id: string;
+  league_id: string;
+  user_id: string;
+  joined_at: string;
+}
+
+export interface LeagueLeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  avatar_emoji: string;
+  total_xp: number;
+  weekly_xp: number;
 }
 
 // Supabase Database type helper

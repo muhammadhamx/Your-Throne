@@ -144,6 +144,22 @@ export default function RootLayout() {
           name="settings"
           options={{ title: 'Settings', presentation: 'card' }}
         />
+        <Stack.Screen
+          name="leagues/index"
+          options={{ title: 'Throne Leagues', presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="leagues/[leagueId]"
+          options={{ title: 'League', presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="leagues/create"
+          options={{ title: 'Create League', presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="leagues/join"
+          options={{ title: 'Join League', presentation: 'card' }}
+        />
       </Stack>
     </ConfettiProvider>
   );

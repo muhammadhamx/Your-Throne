@@ -91,7 +91,7 @@ const TabItem = memo(function TabItem({
     >
       {/* Gold pill background — always rendered, visibility driven by progress */}
       <AnimatedLinearGradient
-        colors={['#FFB020', '#E8940A'] as const}
+        colors={['#62EAAA', '#34D399'] as const}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.pill, pillStyle]}
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   pill: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 22,
-    shadowColor: '#FFB020',
+    shadowColor: '#62EAAA',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.45,
     shadowRadius: 10,

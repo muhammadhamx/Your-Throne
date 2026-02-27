@@ -7,18 +7,23 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useChatStore } from '@/stores/chatStore';
+import { useCreditsStore } from '@/stores/creditsStore';
 import { getRandomItem, EMPTY_STATE_MESSAGES, BUDDY_ICEBREAKERS } from '@/humor/jokes';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, SHADOWS, CREDITS } from '@/utils/constants';
 
 export default function ChatScreen() {
   const user = useAuthStore((s) => s.user);
   const isInSession = useSessionStore((s) => s.isActive);
+  const credits = useCreditsStore((s) => s.credits);
+  const spendOnBuddyMatch = useCreditsStore((s) => s.spendOnBuddyMatch);
+  const loadCredits = useCreditsStore((s) => s.loadCredits);
   const {
     rooms,
     currentMatch,
@@ -37,8 +42,9 @@ export default function ChatScreen() {
     loadRooms();
     if (user?.id) {
       checkActiveMatch(user.id);
+      loadCredits(user.id);
     }
-  }, [user?.id, loadRooms, checkActiveMatch]);
+  }, [user?.id, loadRooms, checkActiveMatch, loadCredits]);
 
   useEffect(() => {
     if (user?.id && isInSession) {
@@ -73,6 +79,8 @@ export default function ChatScreen() {
     setRefreshing(false);
   }, [loadRooms]);
 
+  const canUseCredits = !isInSession && credits >= CREDITS.BUDDY_MATCH_COST;
+
   const handleFindBuddy = async () => {
     if (!user?.id) return;
     if (isSearchingBuddy) {
@@ -81,6 +89,38 @@ export default function ChatScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await startSearching(user.id);
     }
+  };
+
+  const handleFindBuddyWithCredits = async () => {
+    if (!user?.id) return;
+    if (isSearchingBuddy) {
+      await stopSearching(user.id);
+      return;
+    }
+
+    Alert.alert(
+      'Use Credits',
+      `Spend ${CREDITS.BUDDY_MATCH_COST} credits to search for a poop buddy without a session?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: `Use ${CREDITS.BUDDY_MATCH_COST} Credits`,
+          onPress: async () => {
+            try {
+              const success = await spendOnBuddyMatch(user.id);
+              if (success) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await startSearching(user.id);
+              } else {
+                Alert.alert('Not Enough Credits', 'You need more credits. Convert XP on the home screen.');
+              }
+            } catch {
+              Alert.alert('Error', 'Failed to spend credits.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -109,15 +149,13 @@ export default function ChatScreen() {
             </View>
             <Text style={styles.matchArrow}>→</Text>
           </TouchableOpacity>
-        ) : (
+        ) : isInSession ? (
           <TouchableOpacity
             style={[
               styles.findBuddyButton,
-              !isInSession && styles.findBuddyDisabled,
               isSearchingBuddy && styles.findBuddySearching,
             ]}
             onPress={handleFindBuddy}
-            disabled={!isInSession}
             activeOpacity={0.8}
           >
             {isSearchingBuddy ? (
@@ -134,10 +172,53 @@ export default function ChatScreen() {
               </>
             )}
           </TouchableOpacity>
+        ) : (
+          <View style={styles.buddyOptionsColumn}>
+            <TouchableOpacity
+              style={[
+                styles.findBuddyButton,
+                styles.findBuddyDisabled,
+              ]}
+              disabled
+              activeOpacity={0.8}
+            >
+              <Text style={styles.findBuddyEmoji}>🔍</Text>
+              <Text style={styles.findBuddyText}>Find a Poop Buddy</Text>
+            </TouchableOpacity>
+
+            {canUseCredits && (
+              <TouchableOpacity
+                style={[
+                  styles.creditBuddyButton,
+                  isSearchingBuddy && styles.findBuddySearching,
+                ]}
+                onPress={handleFindBuddyWithCredits}
+                activeOpacity={0.8}
+              >
+                {isSearchingBuddy ? (
+                  <>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text style={styles.creditBuddyText}>
+                      Searching...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.findBuddyEmoji}>💎</Text>
+                    <Text style={styles.creditBuddyText}>
+                      Use {CREDITS.BUDDY_MATCH_COST} Credits Instead
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
         )}
         {!isInSession && !currentMatch && (
           <Text style={styles.buddyHint}>
-            Start a session to find a poop buddy
+            {canUseCredits
+              ? 'Start a session for free, or use credits'
+              : 'Start a session to find a poop buddy'}
           </Text>
         )}
       </View>
@@ -252,6 +333,24 @@ const styles = StyleSheet.create({
   findBuddyText: {
     color: COLORS.primaryDark,
     fontSize: 17,
+    fontWeight: '700',
+  },
+  buddyOptionsColumn: {
+    gap: 10,
+  },
+  creditBuddyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.accentWarm,
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 10,
+    ...SHADOWS.glowWarm,
+  },
+  creditBuddyText: {
+    color: COLORS.primaryDark,
+    fontSize: 15,
     fontWeight: '700',
   },
   buddyHint: {

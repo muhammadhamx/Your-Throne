@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1A1118"
+      "backgroundColor": "#0A0E1A"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#4A2B0F"
+        "backgroundColor": "#0B2838"
       },
       "package": "com.throneapp.app",
       "edgeToEdgeEnabled": true,
@@ -37,7 +37,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#4A2B0F"
+          "color": "#0B2838"
         }
       ]
     ],

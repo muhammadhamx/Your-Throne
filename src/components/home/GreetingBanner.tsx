@@ -46,7 +46,7 @@ export function GreetingBanner() {
           height={8}
           labelColor="rgba(255,248,240,0.7)"
           trackColor="rgba(255,255,255,0.1)"
-          fillColor={COLORS.accent}
+          fillColor={COLORS.accentWarm}
         />
       </View>
     </LinearGradient>
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255,176,32,0.08)',
+    backgroundColor: 'rgba(98,234,170,0.08)',
   },
   decorCircle2: {
     position: 'absolute',
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255,176,32,0.05)',
+    backgroundColor: 'rgba(98,234,170,0.05)',
   },
   topRow: {
     marginBottom: 16,
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#F5EDE8',
+    color: '#F1F5F9',
     flex: 1,
     lineHeight: 22,
   },
@@ -107,11 +107,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,176,32,0.15)',
+    backgroundColor: 'rgba(98,234,170,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,176,32,0.25)',
+    borderColor: 'rgba(98,234,170,0.25)',
   },
   rankEmoji: {
     fontSize: 22,
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   rankDescription: {
     fontSize: 12,
-    color: 'rgba(245,237,232,0.5)',
+    color: 'rgba(241,245,249,0.5)',
     marginTop: 2,
     fontStyle: 'italic',
   },

@@ -30,6 +30,7 @@ import {
   type TitleCheckContext,
 } from '@/gamification/cosmetics';
 import { useSessionStore } from '@/stores/sessionStore';
+import { useCreditsStore } from '@/stores/creditsStore';
 import type { Profile } from '@/types/database';
 import { COLORS, SHADOWS } from '@/utils/constants';
 import {
@@ -221,6 +222,7 @@ export default function SettingsScreen() {
             // Clear all local data so the next user starts fresh
             await useGamificationStore.getState().reset();
             useSessionStore.getState().clearLocal();
+            useCreditsStore.getState().reset();
             await signOut();
             router.replace('/(auth)/welcome');
           },

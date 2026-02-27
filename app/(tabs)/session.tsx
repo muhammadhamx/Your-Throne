@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useSession } from '@/hooks/useSession';
 import { useAuthStore } from '@/stores/authStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
+import { useCreditsStore } from '@/stores/creditsStore';
 import { useConfetti } from '@/contexts/ConfettiContext';
 import { SessionTimer } from '@/components/session/SessionTimer';
 import { QuickLogForm } from '@/components/session/QuickLogForm';
@@ -24,7 +25,9 @@ import { StreakCard } from '@/components/home/StreakCard';
 import { DailyChallengesCard } from '@/components/home/DailyChallengesCard';
 import { WeeklyComparison } from '@/components/home/WeeklyComparison';
 import { LeaderboardCard } from '@/components/home/LeaderboardCard';
+import { LeagueRankCard } from '@/components/home/LeagueRankCard';
 import { WeeklyRecapCard } from '@/components/home/WeeklyRecapCard';
+import { CreditsWalletCard } from '@/components/home/CreditsWalletCard';
 import { getRandomItem, EMPTY_STATE_MESSAGES } from '@/humor/jokes';
 import { COLORS, SHADOWS } from '@/utils/constants';
 import type { Session } from '@/types/database';
@@ -36,7 +39,6 @@ const StaticCards = memo(function StaticCards() {
   return (
     <>
       <GreetingBanner />
-      <WeeklyRecapCard />
       <StreakCard />
       <DailyChallengesCard />
     </>
@@ -71,9 +73,15 @@ const ListHeader = memo(function ListHeader({
           only it re-renders per second, not this whole header */}
       <SessionTimer onStart={onStart} onStop={onStop} />
 
-      <LeaderboardCard />
+      <CreditsWalletCard />
+
+      <WeeklyRecapCard />
 
       <WeeklyComparison />
+
+      <LeaderboardCard />
+
+      <LeagueRankCard />
 
       {/* Quick Log */}
       {!isActive && (
@@ -120,6 +128,7 @@ export default function SessionScreen() {
 
   const user = useAuthStore((s) => s.user);
   const { initialize: initGamification, isLoaded: gamificationLoaded, rank, streak } = useGamificationStore();
+  const loadCredits = useCreditsStore((s) => s.loadCredits);
   const { fire: fireConfetti } = useConfetti();
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
@@ -140,6 +149,11 @@ export default function SessionScreen() {
       initGamification();
     }
   }, [gamificationLoaded, initGamification]);
+
+  // Load credits balance
+  useEffect(() => {
+    if (user?.id) loadCredits(user.id);
+  }, [user?.id, loadCredits]);
 
   useEffect(() => {
     if (!gamificationLoaded) return;

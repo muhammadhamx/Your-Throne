@@ -173,7 +173,7 @@ export default function WelcomeScreen() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#FFB020', '#E8940A']}
+                colors={['#62EAAA', '#34D399']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}
@@ -200,7 +200,7 @@ export default function WelcomeScreen() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#FFB020', '#E8940A']}
+                colors={['#62EAAA', '#34D399']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.buttonGradient}

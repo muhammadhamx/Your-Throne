@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Session, Profile, ChatRoom, Message, BuddyMatch } from '@/types/database';
+import type { Session, Profile, ChatRoom, Message, BuddyMatch, League, LeagueLeaderboardEntry } from '@/types/database';
 
 // ============ SESSIONS ============
 
@@ -201,6 +201,44 @@ export async function syncGamificationDown(
   };
 }
 
+// ============ CREDITS ============
+
+export async function getCreditsBalance(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('credits')
+    .eq('id', userId)
+    .single();
+  if (error) return 0;
+  return data.credits ?? 0;
+}
+
+export async function convertXPToCredits(
+  userId: string,
+  xpAmount: number,
+  creditAmount: number
+): Promise<number> {
+  const { data, error } = await supabase.rpc('convert_xp_to_credits', {
+    p_user_id: userId,
+    p_xp_amount: xpAmount,
+    p_credit_amount: creditAmount,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function spendCreditsBuddyMatch(
+  userId: string,
+  cost: number
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('spend_credits_buddy_match', {
+    p_user_id: userId,
+    p_cost: cost,
+  });
+  if (error) throw error;
+  return data as boolean;
+}
+
 // ============ CHAT ROOMS ============
 
 export async function getChatRooms(): Promise<ChatRoom[]> {
@@ -336,4 +374,120 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     .order('xp', { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+// ============ LEAGUES ============
+
+function generateJoinCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/1/O/0 to avoid confusion
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+export async function createLeague(
+  userId: string,
+  name: string,
+  emoji: string,
+  description?: string
+): Promise<League> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const joinCode = generateJoinCode();
+    const { data, error } = await supabase
+      .from('leagues')
+      .insert({
+        name: name.trim(),
+        emoji,
+        description: description?.trim() || null,
+        join_code: joinCode,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    if (error && error.code === '23505') continue; // unique violation, retry
+    if (error) throw error;
+
+    // Auto-join the creator
+    await supabase
+      .from('league_members')
+      .insert({ league_id: data.id, user_id: userId });
+
+    return data;
+  }
+  throw new Error('Failed to generate unique join code');
+}
+
+export async function joinLeagueByCode(
+  userId: string,
+  code: string
+): Promise<string> {
+  const { data, error } = await supabase.rpc('join_league_by_code', {
+    p_user_id: userId,
+    p_code: code,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function leaveLeague(
+  leagueId: string,
+  userId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('league_members')
+    .delete()
+    .eq('league_id', leagueId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function deleteLeague(leagueId: string): Promise<void> {
+  const { error } = await supabase
+    .from('leagues')
+    .delete()
+    .eq('id', leagueId);
+  if (error) throw error;
+}
+
+export async function getMyLeagues(userId: string): Promise<League[]> {
+  const { data, error } = await supabase
+    .from('league_members')
+    .select('league_id, leagues(*)')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => row.leagues).filter(Boolean);
+}
+
+export async function getLeagueById(leagueId: string): Promise<League | null> {
+  const { data, error } = await supabase
+    .from('leagues')
+    .select('*')
+    .eq('id', leagueId)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function getLeagueLeaderboard(
+  leagueId: string
+): Promise<LeagueLeaderboardEntry[]> {
+  const { data, error } = await supabase.rpc('get_league_leaderboard', {
+    p_league_id: leagueId,
+  });
+  if (error) throw error;
+  return (data ?? []) as LeagueLeaderboardEntry[];
+}
+
+export async function getLeagueMemberCount(
+  leagueId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('league_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('league_id', leagueId);
+  if (error) throw error;
+  return count ?? 0;
 }

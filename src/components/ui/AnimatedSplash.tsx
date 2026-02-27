@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // Inner shadow effect
     borderWidth: 3,
-    borderColor: '#E8940A',
+    borderColor: '#34D399',
   },
   iconLetter: {
     fontSize: 46,

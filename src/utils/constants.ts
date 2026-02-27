@@ -34,42 +34,45 @@ export const HEALTHY_DURATION_MIN_SECONDS = 60; // 1 minute
 export const HEALTHY_FREQUENCY_MAX_PER_DAY = 4;
 export const HEALTHY_FREQUENCY_MIN_PER_DAY = 0.3; // ~once every 3 days
 
-// Theme colors
+// Theme colors — deep navy + electric teal + warm gold
 export const COLORS = {
-  primary: '#6B3A1F',       // Rich chocolate
-  primaryDark: '#3D1E0C',   // Deep espresso
-  primaryLight: '#B8784A',  // Caramel
-  accent: '#FFB020',        // Bright amber gold
-  accentLight: '#FFD580',   // Soft gold
-  background: '#1A1118',    // Deep plum-black
-  backgroundCard: '#251C22',// Slightly lighter card bg
-  surface: '#2E2330',       // Dark surface
-  surfaceElevated: '#3A2E3E',// Elevated purple-tint
-  text: '#F5EDE8',          // Warm white
-  textSecondary: '#A89CAE', // Muted lavender
-  textLight: '#776B7D',     // Faded purple
-  success: '#4ADE80',       // Bright green
-  warning: '#FBBF24',       // Amber
-  error: '#FB7185',         // Soft red-pink
-  border: '#3E3344',        // Subtle border
-  tabBarActive: '#FFB020',
-  tabBarInactive: '#776B7D',
-  chatBubbleSelf: '#6B3A1F',
-  chatBubbleOther: '#3A2E3E',
+  primary: '#1B4965',        // Deep ocean blue
+  primaryDark: '#0B2838',    // Midnight navy
+  primaryLight: '#5FA8D3',   // Sky blue
+  accent: '#62EAAA',         // Electric mint/teal
+  accentLight: '#A8F0D4',    // Soft mint
+  accentWarm: '#FFB020',     // Gold for XP/rewards
+  background: '#0A0E1A',     // Deep space navy
+  backgroundCard: '#111827', // Slightly lighter card bg
+  surface: '#1A2237',        // Dark surface with blue tint
+  surfaceElevated: '#243049',// Elevated blue-tint
+  text: '#F1F5F9',           // Clean white
+  textSecondary: '#94A3B8',  // Slate gray
+  textLight: '#64748B',      // Muted slate
+  success: '#4ADE80',        // Bright green
+  warning: '#FBBF24',        // Amber
+  error: '#FB7185',          // Soft red-pink
+  border: '#1E293B',         // Subtle border
+  tabBarActive: '#62EAAA',   // Teal active tab
+  tabBarInactive: '#64748B',
+  chatBubbleSelf: '#1B4965',
+  chatBubbleOther: '#243049',
 } as const;
 
 // Gradient presets for LinearGradient
 export const GRADIENTS = {
-  warm: ['#1A1118', '#251C22'] as const,
-  header: ['#1A1118', '#2A1F28'] as const,
+  warm: ['#0A0E1A', '#111827'] as const,
+  header: ['#0A0E1A', '#141B2D'] as const,
   gold: ['#FFB020', '#FF8C00'] as const,
   fire: ['#FF6B35', '#FFB020'] as const,
-  surface: ['#2E2330', '#251C22'] as const,
-  accent: ['#FFB020', '#E8940A'] as const,
-  banner: ['#3D1E0C', '#6B3A1F', '#8B5530'] as const,
-  navbar: ['#1A1118', '#211720'] as const,
-  button: ['#FFB020', '#E8940A'] as const,
+  surface: ['#1A2237', '#111827'] as const,
+  accent: ['#62EAAA', '#34D399'] as const,
+  banner: ['#0B2838', '#1B4965', '#2D6A8F'] as const,
+  navbar: ['#0A0E1A', '#0F1625'] as const,
+  button: ['#62EAAA', '#34D399'] as const,
+  buttonWarm: ['#FFB020', '#E8940A'] as const,
   buttonDanger: ['#FB7185', '#E5475B'] as const,
+  xp: ['#FFB020', '#E8940A'] as const,
 } as const;
 
 // Shadow presets
@@ -96,6 +99,13 @@ export const SHADOWS = {
     elevation: 2,
   },
   glow: {
+    shadowColor: '#62EAAA',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  glowWarm: {
     shadowColor: '#FFB020',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.4,
@@ -103,6 +113,19 @@ export const SHADOWS = {
     elevation: 8,
   },
 } as const;
+
+// Credits economy
+export const CREDITS = {
+  XP_PER_CREDIT: 10,        // 10 XP = 1 credit
+  MIN_CONVERT_XP: 100,      // Minimum 100 XP to convert (get 10 credits)
+  BUDDY_MATCH_COST: 5,      // 5 credits to find buddy without session
+} as const;
+
+// Leagues
+export const MAX_LEAGUE_NAME_LENGTH = 30;
+export const MAX_LEAGUE_DESCRIPTION_LENGTH = 200;
+export const LEAGUE_JOIN_CODE_LENGTH = 6;
+export const LEAGUE_EMOJI_OPTIONS = ['🏆', '💩', '👑', '⚔️', '🔥', '🌟', '🚀', '🎯', '🏰', '⚡', '🦁', '🐉'];
 
 export const FONTS = {
   regular: 'System',
