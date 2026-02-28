@@ -7,13 +7,15 @@ import {
   Platform,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useAuthStore } from '@/stores/authStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { getSessionsByDateRange } from '@/lib/database';
 import { formatDuration } from '@/utils/formatters';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
 interface WeeklyStats {
   sessions: number;
@@ -73,7 +75,6 @@ export function WeeklyRecapCard() {
       const avgDuration = Math.round(totalDuration / durations.length);
       const longestSession = Math.max(...durations);
 
-      // Most active hour
       const hourCounts: Record<number, number> = {};
       for (const s of sessions) {
         const hour = new Date(s.started_at).getHours();
@@ -83,7 +84,6 @@ export function WeeklyRecapCard() {
         ([, a], [, b]) => b - a
       )[0];
 
-      // Best day of the week
       const dayCounts: Record<number, number> = {};
       for (const s of sessions) {
         const day = new Date(s.started_at).getDay();
@@ -113,7 +113,7 @@ export function WeeklyRecapCard() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'image/png',
-          dialogTitle: 'Share your Throne recap',
+          dialogTitle: 'Share your Royal Throne recap',
         });
       }
     } catch {
@@ -125,59 +125,58 @@ export function WeeklyRecapCard() {
 
   if (!stats) return null;
 
+  const statsGrid = [
+    { label: 'Sessions', value: String(stats.sessions) },
+    { label: 'Total Time', value: formatDuration(stats.totalDuration) },
+    { label: 'Average', value: formatDuration(stats.avgDuration) },
+    { label: 'Longest', value: formatDuration(stats.longestSession) },
+  ];
+
+  const extraStats = [
+    { emoji: rank.emoji, value: xp.toLocaleString(), label: 'Total XP' },
+    { emoji: '🔥', value: String(streak.count), label: 'Day Streak' },
+    { emoji: '📅', value: stats.bestDay, label: 'Best Day' },
+  ];
+
   const recapContent = (
     <View style={styles.cardInner}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerEmoji}>📊</Text>
+        <View style={styles.headerIconCircle}>
+          <Ionicons name="bar-chart" size={18} color={COLORS.accent} />
+        </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Last Week's Throne Report</Text>
+          <Text style={styles.headerTitle}>Last Week's Royal Throne Report</Text>
           <Text style={styles.headerSub}>Your weekly recap is here</Text>
         </View>
       </View>
 
+      {/* Stats grid */}
       <View style={styles.statsGrid}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{stats.sessions}</Text>
-          <Text style={styles.statLabel}>Sessions</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{formatDuration(stats.totalDuration)}</Text>
-          <Text style={styles.statLabel}>Total Time</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{formatDuration(stats.avgDuration)}</Text>
-          <Text style={styles.statLabel}>Average</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{formatDuration(stats.longestSession)}</Text>
-          <Text style={styles.statLabel}>Longest</Text>
-        </View>
+        {statsGrid.map((item, i) => (
+          <View key={i} style={styles.statItem}>
+            <Text style={styles.statValue}>{item.value}</Text>
+            <Text style={styles.statLabel}>{item.label}</Text>
+          </View>
+        ))}
       </View>
 
-      {/* Extra stats row */}
+      {/* Extra row */}
       <View style={styles.extraRow}>
-        <View style={styles.extraItem}>
-          <Text style={styles.extraEmoji}>{rank.emoji}</Text>
-          <Text style={styles.extraValue}>{xp.toLocaleString()}</Text>
-          <Text style={styles.extraLabel}>Total XP</Text>
-        </View>
-        <View style={styles.extraDivider} />
-        <View style={styles.extraItem}>
-          <Text style={styles.extraEmoji}>🔥</Text>
-          <Text style={styles.extraValue}>{streak.count}</Text>
-          <Text style={styles.extraLabel}>Day Streak</Text>
-        </View>
-        <View style={styles.extraDivider} />
-        <View style={styles.extraItem}>
-          <Text style={styles.extraEmoji}>📅</Text>
-          <Text style={styles.extraValue}>{stats.bestDay}</Text>
-          <Text style={styles.extraLabel}>Best Day</Text>
-        </View>
+        {extraStats.map((item, i) => (
+          <View key={i} style={[styles.extraItem, i < extraStats.length - 1 && styles.extraItemBorder]}>
+            <Text style={styles.extraEmoji}>{item.emoji}</Text>
+            <Text style={styles.extraValue}>{item.value}</Text>
+            <Text style={styles.extraLabel}>{item.label}</Text>
+          </View>
+        ))}
       </View>
 
+      {/* Fun fact */}
       <View style={styles.funFact}>
+        <Ionicons name="time-outline" size={13} color={COLORS.textSecondary} />
         <Text style={styles.funFactText}>
-          🕐 Most active around {formatHour(stats.mostActiveHour)} · {stats.bestDayCount} sessions on {stats.bestDay}
+          Most active around {formatHour(stats.mostActiveHour)} · {stats.bestDayCount} sessions on {stats.bestDay}
         </Text>
       </View>
     </View>
@@ -199,8 +198,13 @@ export function WeeklyRecapCard() {
           disabled={isSharing}
           activeOpacity={0.7}
         >
+          <Ionicons
+            name={isSharing ? 'hourglass-outline' : 'share-outline'}
+            size={15}
+            color={COLORS.accent}
+          />
           <Text style={styles.shareText}>
-            {isSharing ? 'Saving...' : '📤 Share Recap'}
+            {isSharing ? 'Saving...' : 'Share Recap'}
           </Text>
         </TouchableOpacity>
       )}
@@ -212,14 +216,19 @@ export function WeeklyRecapCard() {
           options={{ format: 'png', quality: 1 }}
         >
           <View style={styles.shareCard}>
-            <View style={styles.shareBrand}>
+            <LinearGradient
+              colors={GRADIENTS.button}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.shareBrand}
+            >
               <Text style={styles.shareBrandEmoji}>🚽</Text>
-              <Text style={styles.shareBrandText}>Throne</Text>
-            </View>
+              <Text style={styles.shareBrandText}>Royal Throne</Text>
+            </LinearGradient>
             {recapContent}
             <View style={styles.shareFooter}>
               <Text style={styles.shareFooterText}>
-                Track your throne sessions — download Throne
+                Track your throne sessions — download Royal Throne
               </Text>
             </View>
           </View>
@@ -231,10 +240,10 @@ export function WeeklyRecapCard() {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginTop: 12,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.accent + '25',
     overflow: 'hidden',
@@ -244,15 +253,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    paddingBottom: 12,
+    gap: SPACING.sm,
+    padding: SPACING.md,
+    paddingBottom: SPACING.sm,
   },
-  headerEmoji: {
-    fontSize: 28,
+  headerIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.accent + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accent + '25',
+    flexShrink: 0,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     color: COLORS.text,
   },
@@ -264,13 +281,13 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    paddingBottom: 4,
+    paddingHorizontal: SPACING.sm,
+    paddingBottom: SPACING.xs,
   },
   statItem: {
     width: '50%',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
     alignItems: 'center',
   },
   statValue: {
@@ -279,60 +296,66 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
     marginTop: 2,
+    fontWeight: '600',
   },
   extraRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.borderLight,
   },
   extraItem: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    gap: 2,
+  },
+  extraItemBorder: {
+    borderRightWidth: 1,
+    borderRightColor: COLORS.borderLight,
   },
   extraEmoji: {
-    fontSize: 18,
-    marginBottom: 4,
+    fontSize: 16,
   },
   extraValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     color: COLORS.text,
   },
   extraLabel: {
-    fontSize: 11,
-    color: COLORS.textLight,
-    marginTop: 2,
-  },
-  extraDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: COLORS.border,
+    fontSize: 10,
+    color: COLORS.textTertiary,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   funFact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
     backgroundColor: COLORS.surfaceElevated,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
   },
   funFactText: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    textAlign: 'center',
+    flex: 1,
+    lineHeight: 17,
   },
   shareButton: {
-    paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: COLORS.borderLight,
   },
   shareText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.accent,
   },
@@ -352,9 +375,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    backgroundColor: COLORS.primaryDark,
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
   },
   shareBrandEmoji: {
     fontSize: 24,
@@ -362,18 +384,18 @@ const styles = StyleSheet.create({
   shareBrandText: {
     fontSize: 22,
     fontWeight: '800',
-    color: COLORS.text,
+    color: COLORS.primaryDark,
     letterSpacing: 1,
   },
   shareFooter: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: COLORS.primaryDark,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.surfaceElevated,
     alignItems: 'center',
   },
   shareFooterText: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
   },
 });

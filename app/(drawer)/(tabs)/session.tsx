@@ -8,11 +8,12 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { useSession } from '@/hooks/useSession';
 import { useAuthStore } from '@/stores/authStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
-import { useCreditsStore } from '@/stores/creditsStore';
 import { useConfetti } from '@/contexts/ConfettiContext';
 import { SessionTimer } from '@/components/session/SessionTimer';
 import { QuickLogForm } from '@/components/session/QuickLogForm';
@@ -23,17 +24,12 @@ import { PostSessionSummary } from '@/components/session/PostSessionSummary';
 import { GreetingBanner } from '@/components/home/GreetingBanner';
 import { StreakCard } from '@/components/home/StreakCard';
 import { DailyChallengesCard } from '@/components/home/DailyChallengesCard';
-import { WeeklyComparison } from '@/components/home/WeeklyComparison';
-import { LeaderboardCard } from '@/components/home/LeaderboardCard';
-import { LeagueRankCard } from '@/components/home/LeagueRankCard';
-import { WeeklyRecapCard } from '@/components/home/WeeklyRecapCard';
-import { CreditsWalletCard } from '@/components/home/CreditsWalletCard';
 import { getRandomItem, EMPTY_STATE_MESSAGES } from '@/humor/jokes';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
 import type { Session } from '@/types/database';
 import type { SessionReward } from '@/gamification/rewards';
 
-// ─── Stable header components (defined OUTSIDE the screen) ───
+// ─── Static cards — memoized so they don't re-render on timer tick ───
 
 const StaticCards = memo(function StaticCards() {
   return (
@@ -45,9 +41,6 @@ const StaticCards = memo(function StaticCards() {
   );
 });
 
-// Header component defined outside SessionScreen so its identity is stable.
-// It receives only the props it needs — no elapsedSeconds, so it won't
-// re-render on every timer tick.
 const ListHeader = memo(function ListHeader({
   isActive,
   onStart,
@@ -69,30 +62,24 @@ const ListHeader = memo(function ListHeader({
     <View>
       <StaticCards />
 
-      {/* SessionTimer reads elapsedSeconds from store internally —
-          only it re-renders per second, not this whole header */}
+      {/* Session timer — subscribes to store internally, won't re-render ListHeader */}
       <SessionTimer onStart={onStart} onStop={onStop} />
 
-      <CreditsWalletCard />
-
-      <WeeklyRecapCard />
-
-      <WeeklyComparison />
-
-      <LeaderboardCard />
-
-      <LeagueRankCard />
-
-      {/* Quick Log */}
+      {/* Quick Log toggle */}
       {!isActive && (
         <TouchableOpacity
           style={styles.quickLogToggle}
           onPress={onToggleQuickLog}
+          activeOpacity={0.7}
         >
           <View style={styles.quickLogPill}>
-            <Text style={styles.quickLogIcon}>📝</Text>
-            <Text style={styles.quickLogToggleText}>
-              {showQuickLog ? 'Hide Quick Log' : 'Quick Log a Past Session'}
+            <Ionicons
+              name={showQuickLog ? 'chevron-up' : 'pencil-outline'}
+              size={15}
+              color={COLORS.accent}
+            />
+            <Text style={styles.quickLogText}>
+              {showQuickLog ? 'Hide Quick Log' : 'Log a Past Session'}
             </Text>
           </View>
         </TouchableOpacity>
@@ -100,7 +87,7 @@ const ListHeader = memo(function ListHeader({
 
       {showQuickLog && !isActive && <QuickLogForm onSubmit={onQuickLog} />}
 
-      {/* History Header */}
+      {/* History section header */}
       <View style={styles.historyHeader}>
         <Text style={styles.historyTitle}>History</Text>
         <View style={styles.historyBadge}>
@@ -111,7 +98,7 @@ const ListHeader = memo(function ListHeader({
   );
 });
 
-// ─── Main Screen ───
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 
 const RECENT_SESSIONS_LIMIT = 3;
 
@@ -128,16 +115,13 @@ export default function SessionScreen() {
 
   const user = useAuthStore((s) => s.user);
   const { initialize: initGamification, isLoaded: gamificationLoaded, rank, streak } = useGamificationStore();
-  const loadCredits = useCreditsStore((s) => s.loadCredits);
   const { fire: fireConfetti } = useConfetti();
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Track rank changes — only show popup for real rank ups, not initial load
   const prevRankId = useRef<string | null>(null);
 
-  // Post-session summary state
   const [summaryVisible, setSummaryVisible] = useState(false);
   const [summaryData, setSummaryData] = useState<{
     duration: number;
@@ -150,21 +134,12 @@ export default function SessionScreen() {
     }
   }, [gamificationLoaded, initGamification]);
 
-  // Load credits balance
-  useEffect(() => {
-    if (user?.id) loadCredits(user.id);
-  }, [user?.id, loadCredits]);
-
   useEffect(() => {
     if (!gamificationLoaded) return;
-
-    // First load — just record the current rank, don't show popup
     if (prevRankId.current === null) {
       prevRankId.current = rank.id;
       return;
     }
-
-    // Only show popup when rank actually changes after initial load
     if (rank.id !== prevRankId.current) {
       prevRankId.current = rank.id;
       fireConfetti();
@@ -187,14 +162,11 @@ export default function SessionScreen() {
       const result = await stopSession();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (result?.session?.duration_seconds) {
-        // Show the post-session summary modal with rewards
         setSummaryData({
           duration: result.session.duration_seconds,
           reward: result.reward,
         });
         setSummaryVisible(true);
-
-        // Fire confetti for lucky poop or mystery box
         if (result.reward.luckyPoop || result.reward.mysteryBox) {
           fireConfetti();
         }
@@ -215,12 +187,12 @@ export default function SessionScreen() {
   const displaySessions = showAllSessions
     ? sessions
     : sessions.slice(0, RECENT_SESSIONS_LIMIT);
-
   const hasMoreSessions = sessions.length > RECENT_SESSIONS_LIMIT;
 
-  const renderItem = useCallback(({ item }: { item: Session }) => (
+  const renderItem = useCallback(({ item, index }: { item: Session; index: number }) => (
     <SessionCard
       session={item}
+      index={index}
       onRate={!item.rating ? (rating: number) => handleRate(item, rating) : undefined}
     />
   ), [handleRate]);
@@ -230,14 +202,13 @@ export default function SessionScreen() {
   const renderEmpty = useCallback(() => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyEmoji}>🧻</Text>
+      <Text style={styles.emptyTitle}>No sessions yet</Text>
       <Text style={styles.emptyText}>
         {getRandomItem(EMPTY_STATE_MESSAGES.sessions)}
       </Text>
     </View>
   ), []);
 
-  // Stable header element — only re-renders when its props change,
-  // NOT on every timer tick
   const headerElement = (
     <ListHeader
       isActive={isActive}
@@ -255,7 +226,6 @@ export default function SessionScreen() {
       <StillPoopingPopup />
       <SessionStartPopup isActive={isActive} />
 
-      {/* Post-session summary modal with rewards */}
       {summaryData && (
         <PostSessionSummary
           visible={summaryVisible}
@@ -275,14 +245,19 @@ export default function SessionScreen() {
         ListFooterComponent={
           hasMoreSessions ? (
             <TouchableOpacity
-              style={styles.viewAllButton}
+              style={styles.viewAllBtn}
               onPress={handleToggleAllSessions}
               activeOpacity={0.7}
             >
+              <Ionicons
+                name={showAllSessions ? 'chevron-up' : 'chevron-down'}
+                size={15}
+                color={COLORS.accent}
+              />
               <Text style={styles.viewAllText}>
                 {showAllSessions
                   ? 'Show less'
-                  : `View all ${sessions.length} sessions 📜`}
+                  : `View all ${sessions.length} sessions`}
               </Text>
             </TouchableOpacity>
           ) : null
@@ -308,87 +283,93 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   list: {
-    paddingBottom: 32,
+    paddingBottom: SPACING['2xl'],
   },
   quickLogToggle: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: SPACING.xs,
   },
   quickLogPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.surfaceElevated,
+    gap: 7,
+    backgroundColor: COLORS.surfaceRaised,
     paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderAccent,
   },
-  quickLogIcon: {
-    fontSize: 14,
-  },
-  quickLogToggleText: {
+  quickLogText: {
     color: COLORS.accent,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 10,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.sm,
   },
   historyTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: COLORS.text,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
   historyBadge: {
     backgroundColor: COLORS.surfaceElevated,
-    paddingHorizontal: 12,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   historyCount: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 32,
+    paddingVertical: SPACING['3xl'],
+    paddingHorizontal: SPACING['2xl'],
   },
   emptyEmoji: {
-    fontSize: 56,
-    marginBottom: 16,
+    fontSize: 52,
+    marginBottom: SPACING.md,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: SPACING.xs,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: 'center',
     fontStyle: 'italic',
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  viewAllButton: {
+  viewAllBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
+    justifyContent: 'center',
+    gap: 6,
+    marginHorizontal: SPACING.md,
     marginTop: 4,
-    marginBottom: 16,
-    paddingVertical: 14,
-    backgroundColor: COLORS.surfaceElevated,
-    borderRadius: 14,
+    marginBottom: SPACING.md,
+    paddingVertical: 13,
+    backgroundColor: COLORS.surfaceRaised,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.accent,
   },

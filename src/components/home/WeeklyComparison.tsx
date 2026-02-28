@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { getComparison } from '@/humor/comparisons';
 import { useStatsStore } from '@/stores/statsStore';
-import { COLORS } from '@/utils/constants';
+import { COLORS, SPACING, RADIUS } from '@/utils/constants';
+import { Ionicons } from '@expo/vector-icons';
 
 export function WeeklyComparison() {
   const totalDuration = useStatsStore((s) => s.data?.totalDuration ?? 0);
@@ -14,9 +15,13 @@ export function WeeklyComparison() {
   return (
     <View style={styles.container}>
       <View style={styles.pill}>
-        <Text style={styles.icon}>📊</Text>
-        <Text style={styles.text}>
-          {totalMinutes} min this week — {comparison}
+        <View style={styles.iconCircle}>
+          <Ionicons name="bar-chart-outline" size={12} color={COLORS.accent} />
+        </View>
+        <Text style={styles.minuteText}>{totalMinutes} min</Text>
+        <View style={styles.separator} />
+        <Text style={styles.comparisonText} numberOfLines={1}>
+          {comparison}
         </Text>
       </View>
     </View>
@@ -26,25 +31,44 @@ export function WeeklyComparison() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceElevated,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.full,
+    gap: SPACING.xs,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
+    maxWidth: '100%',
   },
-  icon: {
-    fontSize: 14,
+  iconCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.accent + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  text: {
-    fontSize: 13,
+  minuteText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.accent,
+    flexShrink: 0,
+  },
+  separator: {
+    width: 1,
+    height: 12,
+    backgroundColor: COLORS.borderLight,
+    flexShrink: 0,
+  },
+  comparisonText: {
+    fontSize: 12,
     color: COLORS.textSecondary,
     fontStyle: 'italic',
     flex: 1,

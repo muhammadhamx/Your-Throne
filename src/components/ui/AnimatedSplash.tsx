@@ -10,7 +10,8 @@ import Animated, {
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
-import { COLORS } from '@/utils/constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, GRADIENTS } from '@/utils/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -42,28 +43,21 @@ export function AnimatedSplash({ onFinish }: Props) {
   const [visibleSteps, setVisibleSteps] = useState(0);
 
   // --- Animation shared values ---
-  // Logo icon
   const iconScale = useSharedValue(0.3);
   const iconOpacity = useSharedValue(0);
-  const iconRotate = useSharedValue(-20);
+  const iconRotate = useSharedValue(-15);
 
-  // Title
   const titleOpacity = useSharedValue(0);
-  const titleX = useSharedValue(-30);
+  const titleX = useSharedValue(-28);
 
-  // Tagline
   const taglineOpacity = useSharedValue(0);
 
-  // Divider line
   const dividerWidth = useSharedValue(0);
 
-  // Boot steps
   const stepsOpacity = useSharedValue(0);
 
-  // Final glow pulse
   const glowOpacity = useSharedValue(0);
 
-  // Whole container fade out
   const fadeOut = useSharedValue(1);
 
   const advanceStep = useCallback(() => {
@@ -94,24 +88,24 @@ export function AnimatedSplash({ onFinish }: Props) {
 
     const stepTimers: ReturnType<typeof setTimeout>[] = [];
     for (let i = 0; i < BOOT_STEPS.length; i++) {
-      stepTimers.push(setTimeout(() => advanceStep(), 1400 + i * 350));
+      stepTimers.push(setTimeout(() => advanceStep(), 1400 + i * 340));
     }
 
-    // === Phase 6: Glow pulse after all steps (after last step) ===
-    const glowDelay = 1400 + BOOT_STEPS.length * 350 + 200;
+    // === Phase 6: Glow pulse after all steps ===
+    const glowDelay = 1400 + BOOT_STEPS.length * 340 + 200;
     glowOpacity.value = withDelay(
       glowDelay,
       withSequence(
-        withTiming(0.8, { duration: 300 }),
-        withTiming(0, { duration: 500 }),
+        withTiming(0.6, { duration: 300 }),
+        withTiming(0, { duration: 600 }),
       )
     );
 
     // === Phase 7: Fade out ===
-    const exitDelay = glowDelay + 600;
+    const exitDelay = glowDelay + 700;
     fadeOut.value = withDelay(
       exitDelay,
-      withTiming(0, { duration: 350 }, (finished) => {
+      withTiming(0, { duration: 380 }, (finished) => {
         if (finished) {
           runOnJS(onFinish)();
         }
@@ -162,15 +156,22 @@ export function AnimatedSplash({ onFinish }: Props) {
 
       {/* Top section: Logo + Title */}
       <View style={styles.heroSection}>
-        {/* Custom throne icon — a golden circle with T initial */}
+        {/* Royal Throne logo icon — gradient circle with T */}
         <Animated.View style={[styles.iconWrapper, iconStyle]}>
-          <View style={styles.iconCircle}>
+          <LinearGradient
+            colors={GRADIENTS.button}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.iconCircle}
+          >
             <Text style={styles.iconLetter}>T</Text>
-          </View>
+          </LinearGradient>
+          {/* Outer glow ring */}
+          <View style={styles.iconGlowRing} />
         </Animated.View>
 
         <Animated.Text style={[styles.title, titleStyle]}>
-          Throne
+          Royal Throne
         </Animated.Text>
 
         <Animated.Text style={[styles.tagline, taglineStyle]}>
@@ -222,9 +223,9 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
+    width: width * 0.7,
+    height: width * 0.7,
+    borderRadius: width * 0.35,
     backgroundColor: COLORS.accent,
     opacity: 0,
   },
@@ -234,17 +235,24 @@ const styles = StyleSheet.create({
   },
   iconWrapper: {
     marginBottom: 20,
+    position: 'relative',
   },
   iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: COLORS.accent,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    // Inner shadow effect
-    borderWidth: 3,
-    borderColor: '#34D399',
+  },
+  iconGlowRing: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 48,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent + '40',
   },
   iconLetter: {
     fontSize: 46,
@@ -260,11 +268,11 @@ const styles = StyleSheet.create({
     letterSpacing: -3,
   },
   tagline: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 6,
     fontStyle: 'italic',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   dividerContainer: {
     width: '100%',
@@ -273,7 +281,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.borderLight,
   },
   stepsSection: {
     width: '100%',
@@ -289,15 +297,15 @@ const styles = StyleSheet.create({
   stepCheck: {
     fontSize: 12,
     fontFamily: 'monospace',
-    color: COLORS.textLight,
-    width: 30,
+    color: COLORS.textTertiary,
+    width: 32,
   },
   stepCheckDone: {
     color: COLORS.accent,
   },
   stepText: {
     fontSize: 13,
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
     flex: 1,
     fontFamily: 'monospace',
   },
@@ -313,8 +321,8 @@ const styles = StyleSheet.create({
   bottomText: {
     position: 'absolute',
     bottom: 50,
-    fontSize: 12,
-    color: COLORS.textLight,
+    fontSize: 11,
+    color: COLORS.textTertiary,
     letterSpacing: 2,
     textTransform: 'uppercase',
   },

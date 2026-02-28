@@ -7,6 +7,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,16 +15,28 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withSpring,
+  withDelay,
   Easing,
   FadeInUp,
   FadeInDown,
+  interpolate,
+  useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { LOADING_MESSAGES, getRandomItem } from '@/humor/jokes';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING, TYPOGRAPHY } from '@/utils/constants';
+
+const FEATURE_ITEMS = [
+  { emoji: '📊', label: 'Track Sessions' },
+  { emoji: '🔮', label: 'Predict Patterns' },
+  { emoji: '🔥', label: 'Build Streaks' },
+  { emoji: '💬', label: 'Find Buddies' },
+];
 
 export default function WelcomeScreen() {
   const signIn = useAuthStore((s) => s.signIn);
@@ -35,20 +48,35 @@ export default function WelcomeScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const bounceY = useSharedValue(0);
+
+  // Floating crown animation
+  const floatY = useSharedValue(0);
+  const glowScale = useSharedValue(1);
 
   useEffect(() => {
-    bounceY.value = withRepeat(
+    floatY.value = withRepeat(
       withSequence(
-        withTiming(-14, { duration: 800, easing: Easing.out(Easing.quad) }),
-        withTiming(0, { duration: 800, easing: Easing.in(Easing.quad) }),
+        withTiming(-12, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
     );
-  }, [bounceY]);
+    glowScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+    );
+  }, [floatY, glowScale]);
 
-  const bounceStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: bounceY.value }],
+  const floatStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
+    opacity: interpolate(glowScale.value, [1, 1.15], [0.3, 0.55]),
   }));
 
   useEffect(() => {
@@ -65,7 +93,7 @@ export default function WelcomeScreen() {
     setError(null);
     try {
       await signIn();
-      router.replace('/(tabs)/session');
+      router.replace('/(drawer)/(tabs)/session');
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -82,14 +110,11 @@ export default function WelcomeScreen() {
     setError(null);
     try {
       await signInWithEmail(email.trim(), password.trim());
-
-      // Restore gamification data from Supabase
       const userId = useAuthStore.getState().user?.id;
       if (userId) {
         await useGamificationStore.getState().restoreFromRemote(userId);
       }
-
-      router.replace('/(tabs)/session');
+      router.replace('/(drawer)/(tabs)/session');
     } catch (err: any) {
       const msg = err?.message ?? '';
       if (msg.includes('Invalid login')) {
@@ -113,114 +138,171 @@ export default function WelcomeScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.content}>
-        <Animated.Text
-          entering={FadeInDown.duration(600).springify()}
-          style={[styles.emoji, bounceStyle]}
+      <LinearGradient
+        colors={['#060A11', '#0A1020', '#0D1728']}
+        style={StyleSheet.absoluteFill}
+      />
+
+      {/* Ambient glow orbs */}
+      <Animated.View style={[styles.glowOrb, styles.glowOrb1, glowStyle]} />
+      <View style={[styles.glowOrb, styles.glowOrb2]} />
+
+      <View style={styles.heroSection}>
+        {/* Crown/logo */}
+        <Animated.View style={[styles.logoWrapper, floatStyle]}>
+          <View style={styles.logoGlow} />
+          <LinearGradient
+            colors={['#00D4A0', '#00B589']}
+            style={styles.logoCircle}
+          >
+            <Text style={styles.logoEmoji}>👑</Text>
+          </LinearGradient>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(300).duration(600).springify()}>
+          <Text style={styles.title}>Royal Throne</Text>
+          <Text style={styles.subtitle}>
+            Your porcelain kingdom awaits.{'\n'}Track. Predict. Conquer.
+          </Text>
+        </Animated.View>
+
+        {/* Feature chips */}
+        <Animated.View
+          entering={FadeInDown.delay(500).duration(600).springify()}
+          style={styles.featuresRow}
         >
-          💩
-        </Animated.Text>
-        <Animated.Text entering={FadeInUp.delay(200).duration(500)} style={styles.title}>
-          Throne
-        </Animated.Text>
-        <Animated.Text entering={FadeInUp.delay(400).duration(500)} style={styles.subtitle}>
-          Every king needs a throne.{'\n'}
-          Yours just happens to be porcelain.
-        </Animated.Text>
+          {FEATURE_ITEMS.map((f, i) => (
+            <Animated.View
+              key={f.label}
+              entering={FadeInDown.delay(550 + i * 80).duration(500).springify()}
+              style={styles.featureChip}
+            >
+              <Text style={styles.featureEmoji}>{f.emoji}</Text>
+              <Text style={styles.featureLabel}>{f.label}</Text>
+            </Animated.View>
+          ))}
+        </Animated.View>
       </View>
 
-      <Animated.View entering={FadeInUp.delay(600).duration(500)} style={styles.bottom}>
-        {error && <Text style={styles.error}>{error}</Text>}
+      {/* Bottom action area */}
+      <Animated.View
+        entering={FadeInUp.delay(700).duration(600).springify()}
+        style={styles.bottomSection}
+      >
+        {/* Error message */}
+        {error && (
+          <Animated.View entering={FadeInDown.duration(300)} style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </Animated.View>
+        )}
+
+        {/* Loading message */}
         {loading && (
           <Text style={styles.loadingMessage}>{loadingMessage}</Text>
         )}
 
         {showSignIn ? (
           <View style={styles.signInForm}>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email address"
-              placeholderTextColor={COLORS.textLight}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              editable={!loading}
-            />
-            <View style={styles.passwordRow}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={18} color={COLORS.textTertiary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email address"
+                placeholderTextColor={COLORS.textTertiary}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!loading}
+              />
+            </View>
+
+            <View style={[styles.inputWrapper, { marginTop: SPACING.xs }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={COLORS.textTertiary} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, styles.passwordInput]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Password"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={COLORS.textTertiary}
                 secureTextEntry={!showPassword}
                 editable={!loading}
               />
-              <TouchableOpacity
+              <Pressable
                 style={styles.passwordToggle}
                 onPress={() => setShowPassword((v) => !v)}
               >
-                <Text style={styles.passwordToggleText}>
-                  {showPassword ? '🙈' : '👁️'}
-                </Text>
-              </TouchableOpacity>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={18}
+                  color={COLORS.textSecondary}
+                />
+              </Pressable>
             </View>
+
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled, { marginTop: 14 }]}
+              style={[styles.primaryButton, loading && styles.buttonDisabled]}
               onPress={handleEmailSignIn}
               disabled={loading}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#62EAAA', '#34D399']}
+                colors={GRADIENTS.button}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}
+                style={styles.primaryButtonGradient}
               >
-                <Text style={styles.buttonText}>
+                <Text style={styles.primaryButtonText}>
                   {loading ? 'Signing in...' : 'Sign In'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.switchLink}
               onPress={() => { setShowSignIn(false); setError(null); }}
               disabled={loading}
             >
-              <Text style={styles.switchLinkText}>New here? Get started anonymously</Text>
+              <Text style={styles.switchLinkText}>New here? Start anonymously</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <>
+          <View style={styles.buttonGroup}>
             <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
+              style={[styles.primaryButton, loading && styles.buttonDisabled]}
               onPress={handleGetStarted}
               disabled={loading}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               <LinearGradient
-                colors={['#62EAAA', '#34D399']}
+                colors={GRADIENTS.button}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}
+                style={styles.primaryButtonGradient}
               >
-                <Text style={styles.buttonText}>
-                  {loading ? 'Hold on...' : 'Get Started'}
+                <Text style={styles.primaryButtonText}>
+                  {loading ? 'Preparing your royal throne...' : 'Start for Free'}
                 </Text>
+                {!loading && (
+                  <Ionicons name="arrow-forward" size={20} color={COLORS.primaryDark} />
+                )}
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={styles.privacy}>
-              No email required. Completely anonymous.
+
+            <Text style={styles.privacyNote}>
+              No account needed. Completely anonymous.
             </Text>
+
             <TouchableOpacity
-              style={styles.switchLink}
+              style={styles.signInLink}
               onPress={() => { setShowSignIn(true); setError(null); }}
               disabled={loading}
             >
-              <Text style={styles.switchLinkText}>Already have an account? Sign in</Text>
+              <Text style={styles.signInLinkText}>Already have an account? </Text>
+              <Text style={styles.signInLinkAccent}>Sign in</Text>
             </TouchableOpacity>
-          </>
+          </View>
         )}
       </Animated.View>
     </KeyboardAvoidingView>
@@ -231,108 +313,207 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
-    justifyContent: 'space-between',
-    paddingHorizontal: 32,
-    paddingTop: 120,
-    paddingBottom: 60,
   },
-  content: {
+  glowOrb: {
+    position: 'absolute',
+    borderRadius: RADIUS.full,
+  },
+  glowOrb1: {
+    width: 280,
+    height: 280,
+    backgroundColor: COLORS.accent,
+    top: -100,
+    right: -80,
+    opacity: 0.06,
+  },
+  glowOrb2: {
+    width: 200,
+    height: 200,
+    backgroundColor: COLORS.primaryLight,
+    bottom: 100,
+    left: -80,
+    opacity: 0.04,
+  },
+  heroSection: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING['2xl'],
+    paddingTop: 60,
   },
-  emoji: {
-    fontSize: 80,
-    marginBottom: 16,
+  logoWrapper: {
+    alignItems: 'center',
+    marginBottom: SPACING.xl,
+  },
+  logoGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.accent,
+    opacity: 0.12,
+    top: -12,
+    left: -12,
+  },
+  logoCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.glow,
+  },
+  logoEmoji: {
+    fontSize: 44,
   },
   title: {
-    fontSize: 42,
-    fontWeight: '800',
-    color: COLORS.accent,
-    marginBottom: 16,
-    letterSpacing: -1,
+    ...TYPOGRAPHY.displayMd,
+    color: COLORS.text,
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
   },
   subtitle: {
-    fontSize: 18,
+    ...TYPOGRAPHY.bodyLg,
     color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 28,
   },
-  bottom: {
+  featuresRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    marginTop: SPACING.xl,
+  },
+  featureChip: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.surfaceRaised,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  featureEmoji: {
+    fontSize: 14,
+  },
+  featureLabel: {
+    ...TYPOGRAPHY.labelMd,
+    color: COLORS.textSecondary,
+  },
+  bottomSection: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: Platform.OS === 'ios' ? 48 : SPACING['2xl'],
+    paddingTop: SPACING.lg,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: COLORS.errorBg,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.error + '30',
+    marginBottom: SPACING.md,
+  },
+  errorText: {
+    ...TYPOGRAPHY.labelLg,
+    color: COLORS.error,
+    flex: 1,
   },
   loadingMessage: {
+    ...TYPOGRAPHY.bodySm,
     color: COLORS.textSecondary,
-    fontSize: 14,
-    marginBottom: 16,
-    fontStyle: 'italic',
     textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: SPACING.md,
   },
-  button: {
-    width: '100%',
-    borderRadius: 30,
+  buttonGroup: {
+    gap: 0,
+  },
+  primaryButton: {
+    borderRadius: RADIUS.full,
     overflow: 'hidden',
     ...SHADOWS.glow,
   },
-  buttonGradient: {
-    paddingVertical: 18,
-    paddingHorizontal: 48,
-    alignItems: 'center',
-    borderRadius: 30,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: COLORS.primaryDark,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  error: {
-    color: COLORS.error,
-    marginBottom: 12,
-    fontSize: 14,
-  },
-  privacy: {
-    color: COLORS.textLight,
-    fontSize: 13,
-    marginTop: 16,
-  },
-  signInForm: {
-    width: '100%',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: COLORS.text,
-    backgroundColor: COLORS.surface,
-  },
-  passwordRow: {
+  primaryButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: SPACING['2xl'],
+    gap: SPACING.xs,
+  },
+  primaryButtonText: {
+    ...TYPOGRAPHY.h5,
+    color: COLORS.primaryDark,
+    fontWeight: '800',
+    fontSize: 17,
+  },
+  buttonDisabled: {
+    opacity: 0.65,
+  },
+  privacyNote: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textTertiary,
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    marginBottom: SPACING.xs,
+  },
+  signInLink: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+  },
+  signInLinkText: {
+    ...TYPOGRAPHY.labelLg,
+    color: COLORS.textSecondary,
+  },
+  signInLinkAccent: {
+    ...TYPOGRAPHY.labelLg,
+    color: COLORS.accent,
+    fontWeight: '700',
+  },
+  signInForm: {
+    gap: 0,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceRaised,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    paddingHorizontal: SPACING.md,
+  },
+  inputIcon: {
+    marginRight: SPACING.xs,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 15,
+    fontSize: 15,
+    color: COLORS.text,
   },
   passwordInput: {
-    flex: 1,
-    marginTop: 0,
+    paddingRight: 36,
   },
   passwordToggle: {
     position: 'absolute',
-    right: 12,
+    right: SPACING.md,
     padding: 4,
   },
-  passwordToggleText: {
-    fontSize: 20,
-  },
   switchLink: {
-    marginTop: 18,
     alignItems: 'center',
+    paddingVertical: SPACING.md,
   },
   switchLinkText: {
+    ...TYPOGRAPHY.labelLg,
     color: COLORS.accent,
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

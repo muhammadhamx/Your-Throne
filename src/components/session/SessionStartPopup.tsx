@@ -7,12 +7,14 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { getPopupContent, getDismissText } from '@/humor/sessionPopups';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
 interface Props {
   isActive: boolean;
@@ -20,11 +22,11 @@ interface Props {
 
 export function SessionStartPopup({ isActive }: Props) {
   const [visible, setVisible] = useState(false);
-  const [shown, setShown] = useState(false); // Track if already shown this session
+  const [shown, setShown] = useState(false);
   const [content, setContent] = useState(() => getPopupContent(0));
   const [dismissText, setDismissText] = useState(() => getDismissText());
 
-  const translateY = useSharedValue(300);
+  const translateY = useSharedValue(320);
   const backdropOpacity = useSharedValue(0);
 
   const router = useRouter();
@@ -33,7 +35,7 @@ export function SessionStartPopup({ isActive }: Props) {
   const user = useAuthStore((s) => s.user);
 
   const dismiss = useCallback(() => {
-    translateY.value = withTiming(300, { duration: 250 });
+    translateY.value = withTiming(320, { duration: 250 });
     backdropOpacity.value = withTiming(0, { duration: 200 }, () => {
       runOnJS(setVisible)(false);
     });
@@ -68,12 +70,12 @@ export function SessionStartPopup({ isActive }: Props) {
     if (user?.id) {
       useChatStore.getState().startSearching(user.id);
     }
-    router.push('/(tabs)/chat');
+    router.push('/(drawer)/(tabs)/chat');
   };
 
   const handleJoinChat = () => {
     dismiss();
-    router.push('/(tabs)/chat');
+    router.push('/(drawer)/(tabs)/chat');
   };
 
   const sheetStyle = useAnimatedStyle(() => ({
@@ -81,7 +83,7 @@ export function SessionStartPopup({ isActive }: Props) {
   }));
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value * 0.4,
+    opacity: backdropOpacity.value * 0.5,
   }));
 
   if (!visible) return null;
@@ -93,33 +95,50 @@ export function SessionStartPopup({ isActive }: Props) {
       </Pressable>
 
       <Animated.View style={[styles.sheet, sheetStyle]}>
+        {/* Handle */}
         <View style={styles.handle} />
 
-        <Text style={styles.emoji}>{content.emoji}</Text>
+        {/* Emoji */}
+        <View style={styles.emojiCircle}>
+          <Text style={styles.emoji}>{content.emoji}</Text>
+        </View>
+
         <Text style={styles.message}>{content.message}</Text>
 
         {activePoopersCount > 1 && (
-          <Text style={styles.poopersCount}>
-            🚽 {activePoopersCount} poopers online now
-          </Text>
+          <View style={styles.poopersBadge}>
+            <View style={styles.activeDot} />
+            <Text style={styles.poopersCount}>
+              {activePoopersCount} poopers online now
+            </Text>
+          </View>
         )}
 
         <View style={styles.actions}>
+          {/* Find buddy */}
           <TouchableOpacity
-            style={styles.primaryAction}
+            style={styles.primaryActionWrapper}
             onPress={handleFindBuddy}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
-            <Text style={styles.actionEmoji}>🤝</Text>
-            <Text style={styles.primaryActionText}>Find a Poop Buddy</Text>
+            <LinearGradient
+              colors={GRADIENTS.button}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryAction}
+            >
+              <Ionicons name="people-outline" size={18} color={COLORS.primaryDark} />
+              <Text style={styles.primaryActionText}>Find a Poop Buddy</Text>
+            </LinearGradient>
           </TouchableOpacity>
 
+          {/* Join chat */}
           <TouchableOpacity
             style={styles.secondaryAction}
             onPress={handleJoinChat}
             activeOpacity={0.8}
           >
-            <Text style={styles.actionEmoji}>💬</Text>
+            <Ionicons name="chatbubbles-outline" size={18} color={COLORS.text} />
             <Text style={styles.secondaryActionText}>Join the Chat</Text>
           </TouchableOpacity>
         </View>
@@ -148,12 +167,14 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 36,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING['3xl'],
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight,
     ...SHADOWS.cardElevated,
   },
   handle: {
@@ -161,40 +182,71 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: COLORS.border,
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
+  },
+  emojiCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   emoji: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 34,
   },
   message: {
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.text,
     textAlign: 'center',
-    marginBottom: 8,
-    paddingHorizontal: 16,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    lineHeight: 26,
+  },
+  poopersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: COLORS.accent + '15',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    marginBottom: SPACING.xs,
+    borderWidth: 1,
+    borderColor: COLORS.accent + '25',
+  },
+  activeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: COLORS.accent,
   },
   poopersCount: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.accent,
     fontWeight: '600',
-    marginBottom: 4,
   },
   actions: {
     width: '100%',
-    gap: 10,
-    marginTop: 20,
+    gap: SPACING.sm,
+    marginTop: SPACING.lg,
+  },
+  primaryActionWrapper: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
   },
   primaryAction: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.accent,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 10,
-    ...SHADOWS.card,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    gap: SPACING.xs,
   },
   primaryActionText: {
     color: COLORS.primaryDark,
@@ -206,9 +258,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.surfaceElevated,
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 10,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    gap: SPACING.xs,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -217,16 +269,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  actionEmoji: {
-    fontSize: 20,
-  },
   dismissAction: {
-    marginTop: 16,
-    paddingVertical: 8,
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.xs,
   },
   dismissText: {
-    fontSize: 14,
-    color: COLORS.textLight,
+    fontSize: 13,
+    color: COLORS.textTertiary,
     fontWeight: '600',
   },
 });

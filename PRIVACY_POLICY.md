@@ -2,7 +2,7 @@
 
 **Last Updated: February 22, 2026**
 
-Throne ("the App," "we," "us," or "our") is a mobile application designed to help you track your bathroom sessions. We take your privacy seriously — especially given the personal nature of the data involved. This Privacy Policy explains what information we collect, how we use it, and the choices you have.
+Royal Throne ("the App," "we," "us," or "our") is a mobile application designed to help you track your bathroom sessions. We take your privacy seriously — especially given the personal nature of the data involved. This Privacy Policy explains what information we collect, how we use it, and the choices you have.
 
 By using the App, you agree to the collection and use of information as described in this policy.
 

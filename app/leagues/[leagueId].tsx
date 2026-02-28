@@ -8,13 +8,16 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useLeagueStore } from '@/stores/leagueStore';
 import type { LeagueLeaderboardEntry } from '@/types/database';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
 function LeaderboardRow({
   entry,
@@ -27,33 +30,73 @@ function LeaderboardRow({
 }) {
   const medal = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
 
+  const getRankBg = () => {
+    if (index === 0) return GRADIENTS.accent;
+    if (index === 1) return ['#8E8E9A', '#6B6B7A'] as [string, string];
+    if (index === 2) return ['#C2885A', '#A06040'] as [string, string];
+    return null;
+  };
+
+  const rankBg = getRankBg();
+
   return (
-    <View style={[styles.row, isMe && styles.rowHighlight, index === 0 && styles.rowFirst]}>
-      <View style={styles.rankCol}>
-        {medal ? (
-          <Text style={[styles.medal, index === 0 && styles.medalFirst]}>{medal}</Text>
-        ) : (
-          <Text style={styles.rankNumber}>{index + 1}</Text>
-        )}
+    <Animated.View entering={FadeInDown.delay(index * 60).springify().damping(18)}>
+      <View
+        style={[
+          styles.row,
+          isMe && styles.rowHighlight,
+          index === 0 && styles.rowFirst,
+        ]}
+      >
+        {/* Rank column */}
+        <View style={styles.rankCol}>
+          {medal && rankBg ? (
+            <LinearGradient
+              colors={rankBg}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.medalCircle}
+            >
+              <Text style={styles.medalText}>{medal}</Text>
+            </LinearGradient>
+          ) : (
+            <View style={styles.rankCircle}>
+              <Text style={styles.rankNumber}>{index + 1}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Avatar */}
+        <View style={[styles.avatarCircle, index === 0 && styles.avatarCircleFirst]}>
+          <Text style={[styles.avatarEmoji, index === 0 && styles.avatarEmojiFirst]}>
+            {entry.avatar_emoji}
+          </Text>
+        </View>
+
+        {/* Name */}
+        <View style={styles.nameCol}>
+          <Text
+            style={[
+              styles.name,
+              isMe && styles.nameHighlight,
+              index === 0 && styles.nameFirst,
+            ]}
+            numberOfLines={1}
+          >
+            {entry.display_name || 'Anonymous'}
+            {isMe ? ' (You)' : ''}
+          </Text>
+        </View>
+
+        {/* XP */}
+        <View style={styles.xpCol}>
+          <Text style={[styles.xp, isMe && styles.xpHighlight]}>
+            {entry.weekly_xp.toLocaleString()}
+          </Text>
+          <Text style={styles.xpUnit}>XP</Text>
+        </View>
       </View>
-      <Text style={[styles.avatar, index === 0 && styles.avatarFirst]}>
-        {entry.avatar_emoji}
-      </Text>
-      <View style={styles.nameCol}>
-        <Text
-          style={[styles.name, isMe && styles.nameHighlight, index === 0 && styles.nameFirst]}
-          numberOfLines={1}
-        >
-          {entry.display_name || 'Anonymous Pooper'}{isMe ? ' (You)' : ''}
-        </Text>
-      </View>
-      <View style={styles.xpCol}>
-        <Text style={[styles.xp, isMe && styles.xpHighlight]}>
-          {entry.weekly_xp}
-        </Text>
-        <Text style={styles.xpUnit}>this week</Text>
-      </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -137,69 +180,92 @@ export default function LeagueDetailScreen() {
 
   const keyExtractor = useCallback((item: LeagueLeaderboardEntry) => item.user_id, []);
 
+  const ListHeader = currentLeague ? (
+    <Animated.View entering={FadeInDown.delay(50).springify().damping(18)}>
+      {/* League header card */}
+      <View style={styles.headerCard}>
+        <View style={styles.headerEmojiCircle}>
+          <Text style={styles.headerEmoji}>{currentLeague.emoji}</Text>
+        </View>
+        <Text style={styles.headerName}>{currentLeague.name}</Text>
+        {currentLeague.description && (
+          <Text style={styles.headerDesc}>{currentLeague.description}</Text>
+        )}
+
+        {/* Join Code */}
+        <TouchableOpacity style={styles.codeRow} onPress={handleCopyCode} activeOpacity={0.7}>
+          <Ionicons name="key-outline" size={13} color={COLORS.textSecondary} />
+          <Text style={styles.codeLabel}>Join Code</Text>
+          <View style={styles.codeBadge}>
+            <Text style={styles.codeText}>{currentLeague.join_code}</Text>
+          </View>
+          <View style={styles.copyHint}>
+            <Ionicons name="copy-outline" size={12} color={COLORS.accent} />
+            <Text style={styles.copyHintText}>Copy</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Leaderboard section header */}
+      <View style={styles.leaderboardHeader}>
+        <View style={styles.leaderboardTitleRow}>
+          <Text style={styles.leaderboardTitle}>Weekly Leaderboard</Text>
+          <Text style={styles.weeklyNote}>resets every Monday</Text>
+        </View>
+        {leaderboard.length > 0 && (
+          <View style={styles.memberBadge}>
+            <Text style={styles.memberCount}>{leaderboard.length}</Text>
+            <Text style={styles.memberLabel}> members</Text>
+          </View>
+        )}
+      </View>
+    </Animated.View>
+  ) : null;
+
+  const ListEmpty = !isLoading ? (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>No members yet</Text>
+    </View>
+  ) : null;
+
+  const ListFooter = currentLeague ? (
+    <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.footerActions}>
+      <TouchableOpacity
+        style={styles.dangerButton}
+        onPress={isCreator ? handleDelete : handleLeave}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name={isCreator ? 'trash-outline' : 'exit-outline'}
+          size={16}
+          color={COLORS.error}
+        />
+        <Text style={styles.dangerText}>
+          {isCreator ? 'Delete League' : 'Leave League'}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  ) : null;
+
   return (
     <View style={styles.container}>
       <Stack.Screen
-        options={{ title: currentLeague?.name ?? 'League' }}
+        options={{
+          title: currentLeague?.name ?? 'League',
+          headerStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          headerTintColor: COLORS.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 17, color: COLORS.text },
+        }}
       />
 
       <FlatList
         data={leaderboard}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ListHeaderComponent={
-          currentLeague ? (
-            <View>
-              {/* League Header */}
-              <View style={styles.headerCard}>
-                <Text style={styles.headerEmoji}>{currentLeague.emoji}</Text>
-                <Text style={styles.headerName}>{currentLeague.name}</Text>
-                {currentLeague.description && (
-                  <Text style={styles.headerDesc}>{currentLeague.description}</Text>
-                )}
-
-                {/* Join Code */}
-                <TouchableOpacity style={styles.codeRow} onPress={handleCopyCode}>
-                  <Text style={styles.codeLabel}>Join Code:</Text>
-                  <View style={styles.codeBadge}>
-                    <Text style={styles.codeText}>{currentLeague.join_code}</Text>
-                  </View>
-                  <Text style={styles.codeCopy}>tap to copy</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Leaderboard Header */}
-              <View style={styles.leaderboardHeader}>
-                <Text style={styles.leaderboardTitle}>Weekly Leaderboard</Text>
-                <View style={styles.memberBadge}>
-                  <Text style={styles.memberCount}>{leaderboard.length}</Text>
-                </View>
-              </View>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No members yet</Text>
-            </View>
-          ) : null
-        }
-        ListFooterComponent={
-          currentLeague ? (
-            <View style={styles.footerActions}>
-              {isCreator ? (
-                <TouchableOpacity style={styles.dangerButton} onPress={handleDelete}>
-                  <Text style={styles.dangerText}>Delete League</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={styles.dangerButton} onPress={handleLeave}>
-                  <Text style={styles.dangerText}>Leave League</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={ListEmpty}
+        ListFooterComponent={ListFooter}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -221,22 +287,32 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   list: {
-    paddingBottom: 32,
+    paddingBottom: SPACING['2xl'],
   },
   headerCard: {
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 24,
-    borderRadius: 18,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    padding: SPACING.xl,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.card,
   },
+  headerEmojiCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
   headerEmoji: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: 34,
   },
   headerName: {
     fontSize: 22,
@@ -248,56 +324,74 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: SPACING.xs,
     lineHeight: 20,
   },
   codeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.surfaceElevated,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   codeLabel: {
-    fontSize: 13,
-    color: COLORS.textLight,
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
   },
   codeBadge: {
-    backgroundColor: COLORS.surfaceElevated,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.accent + '40',
+    flex: 1,
+    alignItems: 'center',
   },
   codeText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
     color: COLORS.accent,
-    letterSpacing: 3,
+    letterSpacing: 4,
   },
-  codeCopy: {
+  copyHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  copyHintText: {
     fontSize: 11,
-    color: COLORS.textLight,
-    fontStyle: 'italic',
+    color: COLORS.accent,
+    fontWeight: '600',
   },
   leaderboardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 8,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.sm,
+  },
+  leaderboardTitleRow: {
+    gap: 2,
   },
   leaderboardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: COLORS.text,
   },
+  weeklyNote: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    fontStyle: 'italic',
+  },
   memberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: COLORS.surfaceElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 5,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -306,39 +400,78 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.accent,
   },
+  memberLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 10,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
   },
   rowHighlight: {
-    backgroundColor: COLORS.accent + '12',
+    backgroundColor: COLORS.accent + '0D',
   },
   rowFirst: {
-    paddingVertical: 16,
+    paddingVertical: SPACING.md,
   },
   rankCol: {
-    width: 28,
+    width: 32,
     alignItems: 'center',
   },
-  medal: {
-    fontSize: 18,
+  medalCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  medalFirst: {
-    fontSize: 22,
+  medalText: {
+    fontSize: 14,
+  },
+  rankCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   rankNumber: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
   },
-  avatar: {
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    flexShrink: 0,
+  },
+  avatarCircleFirst: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderColor: COLORS.accent + '40',
+    borderWidth: 2,
+  },
+  avatarEmoji: {
+    fontSize: 18,
+  },
+  avatarEmojiFirst: {
     fontSize: 22,
-  },
-  avatarFirst: {
-    fontSize: 28,
   },
   nameCol: {
     flex: 1,
@@ -350,6 +483,7 @@ const styles = StyleSheet.create({
   },
   nameHighlight: {
     color: COLORS.accent,
+    fontWeight: '700',
   },
   nameFirst: {
     fontSize: 15,
@@ -368,12 +502,13 @@ const styles = StyleSheet.create({
   },
   xpUnit: {
     fontSize: 10,
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: SPACING['3xl'],
   },
   emptyText: {
     fontSize: 14,
@@ -381,15 +516,19 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   footerActions: {
-    padding: 16,
-    paddingTop: 24,
+    padding: SPACING.md,
+    paddingTop: SPACING.xl,
   },
   dangerButton: {
-    paddingVertical: 14,
-    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.error,
+    borderColor: COLORS.error + '50',
+    backgroundColor: COLORS.errorBg,
   },
   dangerText: {
     color: COLORS.error,

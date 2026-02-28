@@ -1,8 +1,8 @@
-# Throne
+# Royal Throne
 
 **Every king needs a throne. Yours just happens to be porcelain.**
 
-Throne turns your most private moments into your most productive ones. Track your sessions, discover your patterns, predict when nature will call next, and chat with fellow rulers in real time. Yes, we built an AI for that.
+Royal Throne turns your most private moments into your most productive ones. Track your sessions, discover your patterns, predict when nature will call next, and chat with fellow rulers in real time. Yes, we built an AI for that.
 
 ## Features
 
@@ -146,4 +146,4 @@ Supabase free tier pauses after 1 week of inactivity. A GitHub Actions cron job 
 
 ## License
 
-Copyright (c) 2026 Throne App. All rights reserved. See [LICENSE](LICENSE) for details.
+Copyright (c) 2026 Royal Throne App. All rights reserved. See [LICENSE](LICENSE) for details.

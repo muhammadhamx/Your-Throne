@@ -14,7 +14,7 @@ interface GradientBackgroundProps {
 
 export function GradientBackground({
   children,
-  preset = 'warm',
+  preset = 'background',
   colors,
   style,
   start = { x: 0, y: 0 },

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/stores/authStore';
 import { useCreditsStore } from '@/stores/creditsStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
-import { COLORS, SHADOWS, CREDITS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
 
 export function CreditsWalletCard() {
   const userId = useAuthStore((s) => s.user?.id);
@@ -13,22 +15,20 @@ export function CreditsWalletCard() {
   const xp = useGamificationStore((s) => s.xp);
   const [isConverting, setIsConverting] = useState(false);
 
-  const canConvert = xp >= CREDITS.MIN_CONVERT_XP;
-  const maxConvertableXP = Math.floor(xp / CREDITS.XP_PER_CREDIT) * CREDITS.XP_PER_CREDIT;
-  const creditsFromConvert = maxConvertableXP / CREDITS.XP_PER_CREDIT;
+  const CREDITS_CONFIG = { MIN_CONVERT_XP: 100, XP_PER_CREDIT: 10 };
+  const canConvert = xp >= CREDITS_CONFIG.MIN_CONVERT_XP;
 
   const handleConvert = () => {
     if (!userId || !canConvert) return;
 
-    // Default to converting MIN amount, let user pick
     const amounts: { xp: number; credits: number }[] = [
-      { xp: CREDITS.MIN_CONVERT_XP, credits: CREDITS.MIN_CONVERT_XP / CREDITS.XP_PER_CREDIT },
+      { xp: CREDITS_CONFIG.MIN_CONVERT_XP, credits: CREDITS_CONFIG.MIN_CONVERT_XP / CREDITS_CONFIG.XP_PER_CREDIT },
     ];
     if (xp >= 500) amounts.push({ xp: 500, credits: 50 });
     if (xp >= 1000) amounts.push({ xp: 1000, credits: 100 });
 
     const buttons: { text: string; onPress?: () => void; style?: 'cancel' | 'default' | 'destructive' }[] = amounts.map((a) => ({
-      text: `${a.xp} XP → ${a.credits} Credits`,
+      text: `${a.xp} XP  →  ${a.credits} Credits`,
       onPress: async () => {
         setIsConverting(true);
         try {
@@ -51,91 +51,135 @@ export function CreditsWalletCard() {
   };
 
   return (
-    <View style={styles.card}>
+    <Animated.View
+      entering={FadeInDown.delay(200).duration(500).springify()}
+      style={styles.card}
+    >
       <View style={styles.row}>
-        <View style={styles.left}>
-          <Text style={styles.label}>Credits</Text>
+        {/* Credits balance */}
+        <View style={styles.balanceSection}>
+          <Text style={styles.balanceLabel}>Credits Wallet</Text>
           <View style={styles.balanceRow}>
             <Text style={styles.creditIcon}>💎</Text>
             <Text style={styles.balance}>{credits}</Text>
           </View>
         </View>
+
+        {/* XP info */}
+        <View style={styles.xpSection}>
+          <Text style={styles.xpLabel}>Available XP</Text>
+          <Text style={styles.xpValue}>{xp.toLocaleString()}</Text>
+        </View>
+
+        {/* Convert button */}
         <TouchableOpacity
-          style={[styles.convertButton, (!canConvert || isConverting) && styles.disabled]}
           onPress={handleConvert}
           disabled={!canConvert || isConverting}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
-          <Text style={styles.convertText}>
-            {isConverting ? '...' : 'Convert XP'}
-          </Text>
+          <LinearGradient
+            colors={canConvert && !isConverting ? GRADIENTS.buttonWarm : ['#2A3A4A', '#1E2B3A']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.convertBtn, (!canConvert || isConverting) && styles.convertBtnDisabled]}
+          >
+            <Text style={[styles.convertText, (!canConvert || isConverting) && styles.convertTextDisabled]}>
+              {isConverting ? '...' : 'Convert\nXP'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
+
       <Text style={styles.hint}>
-        {CREDITS.XP_PER_CREDIT} XP = 1 Credit · Use credits to find buddies anytime
+        10 XP = 1 Credit  ·  Use credits to find buddies anytime
       </Text>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    padding: 16,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
     ...SHADOWS.card,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: SPACING.sm,
   },
-  left: {
+  balanceSection: {
     flex: 1,
   },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
+  balanceLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textTertiary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
   balanceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   creditIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   balance: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
     color: COLORS.primaryLight,
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
-  convertButton: {
-    backgroundColor: COLORS.accentWarm,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 12,
+  xpSection: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm,
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.border,
+  },
+  xpLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  xpValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.accentWarm,
+  },
+  convertBtn: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    minWidth: 62,
+  },
+  convertBtnDisabled: {
+    // gradient handles this
   },
   convertText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
     color: COLORS.primaryDark,
+    textAlign: 'center',
+    lineHeight: 16,
   },
-  disabled: {
-    opacity: 0.4,
+  convertTextDisabled: {
+    color: COLORS.textTertiary,
   },
   hint: {
     fontSize: 11,
-    color: COLORS.textLight,
-    marginTop: 10,
+    color: COLORS.textTertiary,
+    marginTop: SPACING.sm,
   },
 });

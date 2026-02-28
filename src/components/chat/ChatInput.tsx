@@ -4,9 +4,17 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Pressable,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, MAX_MESSAGE_LENGTH, MESSAGE_RATE_LIMIT_MS } from '@/utils/constants';
+import { COLORS, RADIUS, SPACING, ANIMATION } from '@/utils/constants';
+import { MAX_MESSAGE_LENGTH, MESSAGE_RATE_LIMIT_MS } from '@/utils/constants';
 
 interface Props {
   onSend: (message: string) => void;
@@ -16,6 +24,8 @@ interface Props {
 export function ChatInput({ onSend, placeholder = 'Type a message...' }: Props) {
   const [text, setText] = useState('');
   const lastSentRef = useRef(0);
+  const sendScale = useSharedValue(1);
+  const hasText = text.trim().length > 0;
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -29,6 +39,20 @@ export function ChatInput({ onSend, placeholder = 'Type a message...' }: Props) 
     setText('');
   };
 
+  const handlePressIn = () => {
+    if (!hasText) return;
+    sendScale.value = withSpring(0.88, ANIMATION.springSnappy);
+  };
+
+  const handlePressOut = () => {
+    sendScale.value = withSpring(1, ANIMATION.spring);
+  };
+
+  const sendBtnStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: sendScale.value }],
+    opacity: interpolate(sendScale.value, [0.88, 1], [0.7, 1]),
+  }));
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -36,25 +60,27 @@ export function ChatInput({ onSend, placeholder = 'Type a message...' }: Props) 
         value={text}
         onChangeText={setText}
         placeholder={placeholder}
-        placeholderTextColor={COLORS.textLight}
+        placeholderTextColor={COLORS.textTertiary}
         maxLength={MAX_MESSAGE_LENGTH}
         multiline
         returnKeyType="send"
         onSubmitEditing={handleSend}
         blurOnSubmit={false}
       />
-      <TouchableOpacity
-        style={[styles.sendButton, !text.trim() && styles.sendDisabled]}
+      <Pressable
         onPress={handleSend}
-        disabled={!text.trim()}
-        activeOpacity={0.7}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={!hasText}
       >
-        <Ionicons
-          name="send"
-          size={20}
-          color={text.trim() ? '#FFFFFF' : COLORS.textLight}
-        />
-      </TouchableOpacity>
+        <Animated.View style={[styles.sendBtn, !hasText && styles.sendBtnDisabled, sendBtnStyle]}>
+          <Ionicons
+            name="send"
+            size={17}
+            color={hasText ? '#fff' : COLORS.textTertiary}
+          />
+        </Animated.View>
+      </Pressable>
     </View>
   );
 }
@@ -63,32 +89,38 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    paddingBottom: SPACING.sm,
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
-    gap: 8,
+    gap: SPACING.xs,
   },
   input: {
     flex: 1,
     backgroundColor: COLORS.surfaceElevated,
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    borderRadius: 22,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 10,
+    paddingTop: 10,
     fontSize: 15,
     color: COLORS.text,
     maxHeight: 100,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
-  sendButton: {
+  sendBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sendDisabled: {
-    backgroundColor: COLORS.border,
+  sendBtnDisabled: {
+    backgroundColor: COLORS.surfaceElevated,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
 });

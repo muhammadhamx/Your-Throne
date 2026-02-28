@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '@/utils/constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, GRADIENTS, SPACING } from '@/utils/constants';
 
 interface XPProgressBarProps {
   current: number;
@@ -32,21 +33,37 @@ export function XPProgressBar({
         <View style={styles.labelRow}>
           {rankEmoji && <Text style={styles.emoji}>{rankEmoji}</Text>}
           <Text style={[styles.xpText, labelColor ? { color: labelColor } : undefined]}>
-            {current} / {needed} XP
+            {current.toLocaleString()} / {needed.toLocaleString()} XP
           </Text>
-          <Text style={[styles.percentText, labelColor ? { color: labelColor } : undefined]}>
-            {Math.round(clampedPercent)}%
-          </Text>
+          <View style={styles.percentBadge}>
+            <Text style={[styles.percentText, labelColor ? { color: labelColor } : undefined]}>
+              {Math.round(clampedPercent)}%
+            </Text>
+          </View>
         </View>
       )}
-      <View style={[styles.track, { height }, trackColor ? { backgroundColor: trackColor } : undefined]}>
-        <View
-          style={[
-            styles.fill,
-            { height, width: `${clampedPercent}%` },
-            fillColor ? { backgroundColor: fillColor } : undefined,
-          ]}
-        />
+      <View
+        style={[
+          styles.track,
+          { height },
+          trackColor ? { backgroundColor: trackColor } : undefined,
+        ]}
+      >
+        {fillColor ? (
+          <View
+            style={[
+              styles.fill,
+              { height, width: `${clampedPercent}%`, backgroundColor: fillColor },
+            ]}
+          />
+        ) : (
+          <LinearGradient
+            colors={GRADIENTS.button}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.fill, { height, width: `${clampedPercent}%` }]}
+          />
+        )}
       </View>
     </View>
   );
@@ -59,8 +76,8 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
-    gap: 6,
+    marginBottom: SPACING.xs,
+    gap: SPACING.xs,
   },
   emoji: {
     fontSize: 14,
@@ -71,18 +88,24 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     flex: 1,
   },
+  percentBadge: {
+    backgroundColor: COLORS.accent + '18',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+  },
   percentText: {
     fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textLight,
+    color: COLORS.accent,
   },
   track: {
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.borderLight,
     borderRadius: 100,
     overflow: 'hidden',
   },
   fill: {
-    backgroundColor: COLORS.accent,
     borderRadius: 100,
+    backgroundColor: COLORS.accent,
   },
 });

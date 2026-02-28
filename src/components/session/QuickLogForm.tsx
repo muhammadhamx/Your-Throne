@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { COLORS, MAX_SESSION_DURATION_SECONDS } from '@/utils/constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS, MAX_SESSION_DURATION_SECONDS } from '@/utils/constants';
 
 interface Props {
   onSubmit: (startedAt: string, durationSeconds: number, notes?: string) => Promise<void>;
@@ -47,48 +49,90 @@ export function QuickLogForm({ onSubmit }: Props) {
     }
   };
 
+  const canSubmit = !isSubmitting && minutes.trim().length > 0;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Quick Log</Text>
-      <Text style={styles.subtitle}>Log a recent session</Text>
-
-      <View style={styles.row}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Duration (minutes)</Text>
-          <TextInput
-            style={styles.input}
-            value={minutes}
-            onChangeText={setMinutes}
-            keyboardType="numeric"
-            placeholder="5"
-            placeholderTextColor={COLORS.textLight}
-            maxLength={3}
-          />
+      <View style={styles.header}>
+        <View style={styles.headerIconCircle}>
+          <Ionicons name="pencil" size={14} color={COLORS.accent} />
+        </View>
+        <View>
+          <Text style={styles.title}>Quick Log</Text>
+          <Text style={styles.subtitle}>Log a recent session manually</Text>
         </View>
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Notes (optional)</Text>
-        <TextInput
-          style={[styles.input, styles.notesInput]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="How was it?"
-          placeholderTextColor={COLORS.textLight}
-          maxLength={200}
-          multiline
-        />
+      <View style={styles.fields}>
+        {/* Duration input */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Duration (minutes)</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="time-outline" size={16} color={COLORS.textTertiary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={minutes}
+              onChangeText={setMinutes}
+              keyboardType="numeric"
+              placeholder="5"
+              placeholderTextColor={COLORS.textTertiary}
+              maxLength={3}
+              returnKeyType="done"
+            />
+            {minutes.length > 0 && (
+              <Text style={styles.inputSuffix}>min</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Notes input */}
+        <View style={styles.fieldGroup}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Notes</Text>
+            <Text style={styles.optional}>optional</Text>
+          </View>
+          <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
+            <Ionicons
+              name="chatbubble-outline"
+              size={16}
+              color={COLORS.textTertiary}
+              style={[styles.inputIcon, { marginTop: 1 }]}
+            />
+            <TextInput
+              style={[styles.input, styles.notesInput]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="How was it?"
+              placeholderTextColor={COLORS.textTertiary}
+              maxLength={200}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+        </View>
       </View>
 
       <TouchableOpacity
-        style={[styles.submitButton, isSubmitting && styles.disabled]}
+        style={[styles.submitButton, !canSubmit && styles.disabled]}
         onPress={handleSubmit}
-        disabled={isSubmitting}
-        activeOpacity={0.8}
+        disabled={!canSubmit}
+        activeOpacity={0.85}
       >
-        <Text style={styles.submitText}>
-          {isSubmitting ? 'Logging...' : 'Log Session'}
-        </Text>
+        <LinearGradient
+          colors={canSubmit ? GRADIENTS.button : ['#2A2A3A', '#2A2A3A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.submitGradient}
+        >
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={18}
+            color={canSubmit ? COLORS.primaryDark : COLORS.textTertiary}
+          />
+          <Text style={[styles.submitText, !canSubmit && styles.disabledText]}>
+            {isSubmitting ? 'Logging...' : 'Log Session'}
+          </Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
@@ -97,67 +141,126 @@ export function QuickLogForm({ onSubmit }: Props) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginHorizontal: 16,
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.card,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  headerIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.accent + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accent + '25',
+    flexShrink: 0,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: COLORS.text,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    marginBottom: 16,
+    marginTop: 1,
   },
-  row: {
+  fields: {
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  fieldGroup: {},
+  labelRow: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  inputGroup: {
-    flex: 1,
-    marginBottom: 12,
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: COLORS.textSecondary,
-    marginBottom: 6,
+    marginBottom: SPACING.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  optional: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
+    fontStyle: 'italic',
+    textTransform: 'none',
+    letterSpacing: 0,
+    marginBottom: SPACING.xs,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceElevated,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    paddingHorizontal: SPACING.sm,
+  },
+  textAreaWrapper: {
+    alignItems: 'flex-start',
+    paddingVertical: SPACING.xs,
+  },
+  inputIcon: {
+    marginRight: SPACING.xs,
+    flexShrink: 0,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    flex: 1,
+    paddingVertical: 11,
+    fontSize: 15,
     color: COLORS.text,
-    backgroundColor: COLORS.surfaceElevated,
   },
   notesInput: {
     height: 60,
+    paddingVertical: SPACING.xs,
     textAlignVertical: 'top',
   },
-  submitButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 4,
+  inputSuffix: {
+    fontSize: 13,
+    color: COLORS.textTertiary,
+    fontWeight: '600',
+    marginLeft: SPACING.xs,
   },
-  disabled: {
-    opacity: 0.6,
+  submitButton: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
+  },
+  submitGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.md,
   },
   submitText: {
     color: COLORS.primaryDark,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+  },
+  disabled: {
+    opacity: 0.6,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  disabledText: {
+    color: COLORS.textTertiary,
   },
 });

@@ -100,7 +100,7 @@ export const ACHIEVEMENT_HUMOR: Record<string, string> = {
 
 export const ENGAGEMENT_NOTIFICATIONS = [
   { title: 'Daily Poop Fact 💩', body: 'The average person spends about 3 months of their lifetime on the toilet. Make them count!' },
-  { title: 'Throne Wisdom 👑', body: 'Squatting is the most natural pooping position. Your ancestors knew what was up.' },
+  { title: 'Royal Throne Wisdom 👑', body: 'Squatting is the most natural pooping position. Your ancestors knew what was up.' },
   { title: 'Health Tip 🩺', body: 'A healthy poop should take less than 10 minutes. If longer, you might need more fiber!' },
   { title: 'Did You Know? 🤓', body: 'Your gut has over 100 million neurons. It\'s literally your second brain!' },
   { title: 'Hydration Check 💧', body: 'Drinking water helps keep things moving. Have you had 8 glasses today?' },

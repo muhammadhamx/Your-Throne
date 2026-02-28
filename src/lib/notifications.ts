@@ -291,7 +291,7 @@ export async function scheduleWeeklyRecapNotification() {
     await Notifications.scheduleNotificationAsync({
       identifier: WEEKLY_RECAP_ID,
       content: {
-        title: '📊 Your Weekly Throne Report',
+        title: '📊 Your Weekly Royal Throne Report',
         body: "Your throne stats for the week are ready! Open the app to see how you did.",
         ...(Platform.OS === 'android' && { channelId: 'engagement' }),
       },

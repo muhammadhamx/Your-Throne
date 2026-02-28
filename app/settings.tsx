@@ -8,11 +8,15 @@ import {
   TextInput,
   Alert,
   Switch,
+  Pressable,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import Constants from 'expo-constants';
 import { router, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useGamificationStore } from '@/stores/gamificationStore';
 import { getProfile, updateProfile, syncGamificationUp, type GamificationSyncData } from '@/lib/database';
@@ -32,16 +36,52 @@ import {
 import { useSessionStore } from '@/stores/sessionStore';
 import { useCreditsStore } from '@/stores/creditsStore';
 import type { Profile } from '@/types/database';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
 import {
   scheduleEngagementNotifications,
   cancelEngagementNotifications,
 } from '@/lib/notifications';
 
 const NOTIFICATIONS_ENABLED_KEY = '@notifications_enabled';
-
 const BASE_AVATAR_EMOJIS = ['💩', '🚽', '📰', '🧻', '👑', '🦆', '🐻', '🌟', '🎯', '🔥', '🌈', '🍀'];
 const LOCKED_AVATAR_EMOJIS = LOCKED_AVATARS.map((a) => a.emoji);
+
+// ─── Section header ────────────────────────────────────────────────────────
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <Text style={styles.sectionTitle}>{title}</Text>
+  );
+}
+
+// ─── Setting row (toggle/button) ──────────────────────────────────────────
+
+function SettingRow({
+  icon,
+  label,
+  description,
+  right,
+}: {
+  icon: string;
+  label: string;
+  description?: string;
+  right: React.ReactNode;
+}) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={styles.settingIcon}>
+        <Text style={styles.settingIconText}>{icon}</Text>
+      </View>
+      <View style={styles.settingInfo}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        {description && <Text style={styles.settingDesc}>{description}</Text>}
+      </View>
+      {right}
+    </View>
+  );
+}
+
+// ─── Main Settings Screen ─────────────────────────────────────────────────
 
 export default function SettingsScreen() {
   const user = useAuthStore((s) => s.user);
@@ -63,7 +103,6 @@ export default function SettingsScreen() {
   const [selectedTitleId, setSelectedTitleId] = useState('the_newbie');
   const sessions = useSessionStore((s) => s.sessions);
 
-  // Check if user is truly anonymous — no email, no email identity, or explicitly anonymous
   const hasEmailIdentity = user?.identities?.some((i) => i.provider === 'email') ?? false;
   const pendingEmail = (user as any)?.new_email || (user as any)?.email_change || user?.user_metadata?.email;
   const hasEmail = !!user?.email || !!pendingEmail;
@@ -73,10 +112,8 @@ export default function SettingsScreen() {
     || user?.identities?.find((i) => i.provider === 'email')?.identity_data?.email as string | undefined
     || null;
 
-  const appVersion =
-    Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.0.0';
+  const appVersion = Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version ?? '1.0.0';
 
-  // Build title check context
   const titleContext: TitleCheckContext = {
     totalSessions: sessions.length,
     currentStreak: useGamificationStore.getState().streak.count,
@@ -88,7 +125,7 @@ export default function SettingsScreen() {
       return h >= 0 && h < 4;
     }),
     hasEarlyBird: sessions.some((s) => new Date(s.started_at).getHours() < 6),
-    hasBuddyChat: false, // Could be tracked more precisely
+    hasBuddyChat: false,
     rankId: rank.id,
   };
 
@@ -99,12 +136,10 @@ export default function SettingsScreen() {
     if (!gamificationLoaded) initGamification();
   }, [gamificationLoaded, initGamification]);
 
-  // Load selected title
   useEffect(() => {
     getSelectedTitle().then(setSelectedTitleId);
   }, []);
 
-  // Fire confetti on new achievement unlock
   useEffect(() => {
     if (newlyUnlockedQueue.length > 0) {
       fireConfetti();
@@ -132,7 +167,6 @@ export default function SettingsScreen() {
     });
   }, [user?.id]);
 
-  /** Build full sync payload from current local state */
   const buildSyncData = async (): Promise<GamificationSyncData> => {
     const { xp: currentXP, streak } = useGamificationStore.getState();
     const [titleStr, titlesStr, achievementsStr, sessionCountStr] = await Promise.all([
@@ -179,23 +213,17 @@ export default function SettingsScreen() {
     try {
       const emailToLink = linkEmailValue.trim();
       const updatedUser = await linkEmail(emailToLink, linkPasswordValue.trim());
-
-      // Update auth store directly with the returned user (has email set immediately)
-      // Don't rely on refreshUser/getUser — it may return stale pre-confirmation data
       if (updatedUser) {
         useAuthStore.setState({ user: updatedUser });
       }
-
-      // Push ALL local data to Supabase so it's fully recoverable
       const userId = updatedUser?.id ?? user?.id;
       if (userId) {
         const syncData = await buildSyncData();
         await syncGamificationUp(userId, syncData).catch(() => {});
       }
-
       Alert.alert(
         'Email Linked!',
-        `Your email ${emailToLink} has been linked successfully. You can now sign in on any device to recover your data.`
+        `Your email ${emailToLink} has been linked. You can now sign in on any device.`
       );
       setShowLinkEmail(false);
       setLinkEmailValue('');
@@ -211,7 +239,7 @@ export default function SettingsScreen() {
     Alert.alert(
       'Sign Out',
       isAnonymous
-        ? 'You haven\'t linked an email — you will lose all your data. Are you sure?'
+        ? "You haven't linked an email — you will lose all your data. Are you sure?"
         : 'You can sign back in with your email to restore your data.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -219,7 +247,6 @@ export default function SettingsScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            // Clear all local data so the next user starts fresh
             await useGamificationStore.getState().reset();
             useSessionStore.getState().clearLocal();
             useCreditsStore.getState().reset();
@@ -283,47 +310,59 @@ export default function SettingsScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
     >
-      <Stack.Screen options={{ title: 'Settings' }} />
+      <Stack.Screen
+        options={{
+          title: 'Settings',
+          headerStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          headerTintColor: COLORS.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 18, color: COLORS.text },
+        }}
+      />
 
-      {/* Profile Section */}
-      <Text style={styles.sectionTitle}>Profile</Text>
-      <View style={styles.card}>
-        <Text style={styles.label}>Display Name</Text>
-        <TextInput
-          style={styles.input}
-          value={displayName}
-          onChangeText={setDisplayName}
-          placeholder="Anonymous Pooper"
-          placeholderTextColor={COLORS.textLight}
-          maxLength={30}
-        />
+      {/* ─── Profile ─── */}
+      <SectionHeader title="Profile" />
+      <Animated.View entering={FadeInDown.delay(50).duration(400).springify()} style={styles.card}>
+        <Text style={styles.fieldLabel}>Display Name</Text>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="person-outline" size={16} color={COLORS.textTertiary} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            value={displayName}
+            onChangeText={setDisplayName}
+            placeholder="Anonymous Pooper"
+            placeholderTextColor={COLORS.textTertiary}
+            maxLength={30}
+          />
+        </View>
 
-        <Text style={[styles.label, { marginTop: 16 }]}>Avatar</Text>
+        <Text style={[styles.fieldLabel, { marginTop: SPACING.md }]}>Avatar</Text>
         <View style={styles.emojiGrid}>
           {allAvatarEmojis.map((emoji) => {
             const unlocked = isAvatarUnlocked(emoji, rank.id);
             const lockedInfo = LOCKED_AVATARS.find((a) => a.emoji === emoji);
+            const isSelected = selectedEmoji === emoji;
             return (
               <TouchableOpacity
                 key={emoji}
                 style={[
-                  styles.emojiButton,
-                  selectedEmoji === emoji && styles.emojiButtonSelected,
-                  !unlocked && styles.emojiButtonLocked,
+                  styles.emojiBtn,
+                  isSelected && styles.emojiBtnSelected,
+                  !unlocked && styles.emojiBtnLocked,
                 ]}
                 onPress={() => {
                   if (unlocked) {
                     setSelectedEmoji(emoji);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   } else if (lockedInfo) {
-                    Alert.alert(
-                      '🔒 Locked',
-                      `Reach ${lockedInfo.rankName} to unlock this avatar.`
-                    );
+                    Alert.alert('Locked', `Reach ${lockedInfo.rankName} to unlock this avatar.`);
                   }
                 }}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.emojiText, !unlocked && { opacity: 0.35 }]}>
+                <Text style={[styles.emojiText, !unlocked && { opacity: 0.3 }]}>
                   {unlocked ? emoji : '🔒'}
                 </Text>
               </TouchableOpacity>
@@ -332,43 +371,51 @@ export default function SettingsScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.saveButton, isSaving && styles.disabled]}
+          style={[styles.saveBtn, isSaving && styles.btnDisabled]}
           onPress={handleSave}
           disabled={isSaving}
+          activeOpacity={0.85}
         >
-          <Text style={styles.saveButtonText}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Text>
+          <LinearGradient
+            colors={GRADIENTS.button}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.saveBtnGradient}
+          >
+            <Text style={styles.saveBtnText}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </Text>
+          </LinearGradient>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Throne Rank Section */}
-      <Text style={styles.sectionTitle}>Throne Rank</Text>
-      <View style={styles.card}>
-        <View style={styles.rankHeader}>
-          <Text style={styles.rankEmoji}>{rank.emoji}</Text>
+      {/* ─── Throne Rank ─── */}
+      <SectionHeader title="Throne Rank" />
+      <Animated.View entering={FadeInDown.delay(100).duration(400).springify()} style={styles.card}>
+        <View style={styles.rankRow}>
+          <View style={styles.rankEmojiCircle}>
+            <Text style={styles.rankEmoji}>{rank.emoji}</Text>
+          </View>
           <View style={styles.rankInfo}>
             <Text style={styles.rankName}>{rank.name}</Text>
-            <Text style={styles.rankDescription}>{rank.description}</Text>
+            <Text style={styles.rankDesc}>{rank.description}</Text>
           </View>
         </View>
-        <View style={{ marginTop: 12 }}>
+        <View style={{ marginTop: SPACING.md }}>
           <XPProgressBar
             current={xpProgress.current}
             needed={xpProgress.needed}
             percentage={xpProgress.percentage}
-            showLabel={true}
+            showLabel
           />
         </View>
-        <Text style={styles.totalXP}>{xp} total XP</Text>
-      </View>
+        <Text style={styles.totalXP}>{xp.toLocaleString()} total XP</Text>
+      </Animated.View>
 
-      {/* Throne Titles Section */}
-      <Text style={styles.sectionTitle}>Throne Titles</Text>
-      <View style={styles.card}>
-        <Text style={styles.titleHint}>
-          Tap a title to equip it. Unlock more by playing!
-        </Text>
+      {/* ─── Throne Titles ─── */}
+      <SectionHeader title="Throne Titles" />
+      <Animated.View entering={FadeInDown.delay(150).duration(400).springify()} style={styles.card}>
+        <Text style={styles.hintText}>Tap a title to equip it. Unlock more by playing!</Text>
         <View style={styles.titleGrid}>
           {THRONE_TITLES.map((title) => {
             const isUnlocked = unlockedTitles.some((t) => t.id === title.id);
@@ -386,16 +433,12 @@ export default function SettingsScreen() {
                     setSelectedTitleId(title.id);
                     await persistSelectedTitle(title.id);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    // Sync title selection to Supabase
                     if (user?.id) {
                       const syncData = await buildSyncData();
                       syncGamificationUp(user.id, syncData).catch(() => {});
                     }
                   } else {
-                    Alert.alert(
-                      `🔒 ${title.name}`,
-                      `${title.unlockCondition}\n\n"${title.description}"`
-                    );
+                    Alert.alert(`🔒 ${title.name}`, `${title.unlockCondition}\n\n"${title.description}"`);
                   }
                 }}
                 activeOpacity={0.7}
@@ -417,12 +460,12 @@ export default function SettingsScreen() {
             );
           })}
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Achievements Section */}
-      <Text style={styles.sectionTitle}>Achievements</Text>
-      <View style={styles.card}>
-        <View style={styles.achievementGrid}>
+      {/* ─── Achievements ─── */}
+      <SectionHeader title="Achievements" />
+      <Animated.View entering={FadeInDown.delay(200).duration(400).springify()} style={styles.card}>
+        <View style={styles.achievementsGrid}>
           {achievements.map((a) => {
             const isUnlocked = unlockedIds.includes(a.id);
             return (
@@ -435,11 +478,7 @@ export default function SettingsScreen() {
                 onPress={() => {
                   Alert.alert(
                     `${a.emoji} ${a.name}`,
-                    `${a.description}${
-                      isUnlocked
-                        ? `\n\n"${a.flavor}"`
-                        : '\n\nKeep going to unlock!'
-                    }`
+                    `${a.description}${isUnlocked ? `\n\n"${a.flavor}"` : '\n\nKeep going to unlock!'}`
                   );
                 }}
                 activeOpacity={0.7}
@@ -448,10 +487,7 @@ export default function SettingsScreen() {
                   {isUnlocked ? a.emoji : '🔒'}
                 </Text>
                 <Text
-                  style={[
-                    styles.achievementName,
-                    !isUnlocked && styles.achievementLocked,
-                  ]}
+                  style={[styles.achievementName, !isUnlocked && styles.achievementNameLocked]}
                   numberOfLines={1}
                 >
                   {a.name}
@@ -460,133 +496,208 @@ export default function SettingsScreen() {
             );
           })}
         </View>
-        <Text style={styles.achievementCount}>
-          {unlockedCount}/{totalCount} unlocked
-        </Text>
-      </View>
-
-      {/* Notifications */}
-      <Text style={styles.sectionTitle}>Notifications</Text>
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Prediction Alerts</Text>
-            <Text style={styles.settingDescription}>
-              Get notified before your predicted session time
-            </Text>
+        <View style={styles.achievementCountRow}>
+          <Text style={styles.achievementCount}>{unlockedCount}/{totalCount} unlocked</Text>
+          <View style={styles.achievementProgress}>
+            <View
+              style={[
+                styles.achievementProgressFill,
+                { width: `${(unlockedCount / totalCount) * 100}%` as any },
+              ]}
+            />
           </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleNotificationToggle}
-            trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-            thumbColor={notificationsEnabled ? COLORS.primary : COLORS.textLight}
-          />
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Account Section */}
-      <Text style={styles.sectionTitle}>Account</Text>
-      {isAnonymous ? (
-        <View style={styles.card}>
-          <Text style={styles.accountInfo}>
-            Anonymous account (no email linked)
-          </Text>
+      {/* ─── Notifications ─── */}
+      <SectionHeader title="Notifications" />
+      <Animated.View entering={FadeInDown.delay(250).duration(400).springify()} style={styles.card}>
+        <SettingRow
+          icon="🔔"
+          label="Prediction Alerts"
+          description="Get notified before your predicted session time"
+          right={
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleNotificationToggle}
+              trackColor={{ false: COLORS.border, true: COLORS.accent + 'AA' }}
+              thumbColor={notificationsEnabled ? COLORS.accent : COLORS.textTertiary}
+              ios_backgroundColor={COLORS.border}
+            />
+          }
+        />
+      </Animated.View>
 
-          {!showLinkEmail ? (
-            <>
-              <Text style={styles.linkHint}>
-                Link an email to access your data from other devices and prevent data loss.
-              </Text>
+      {/* ─── Account ─── */}
+      <SectionHeader title="Account" />
+      <Animated.View entering={FadeInDown.delay(300).duration(400).springify()} style={styles.card}>
+        {isAnonymous ? (
+          <>
+            <View style={styles.anonymousWarning}>
+              <View style={styles.anonymousIconBg}>
+                <Text style={styles.anonymousIcon}>⚠️</Text>
+              </View>
+              <View style={styles.anonymousInfo}>
+                <Text style={styles.anonymousTitle}>Anonymous Account</Text>
+                <Text style={styles.anonymousSub}>
+                  Link an email to save your data across devices.
+                </Text>
+              </View>
+            </View>
+
+            {!showLinkEmail ? (
               <TouchableOpacity
-                style={styles.linkButton}
+                style={styles.linkBtn}
                 onPress={() => setShowLinkEmail(true)}
+                activeOpacity={0.85}
               >
-                <Text style={styles.linkButtonText}>Link Email</Text>
+                <Ionicons name="mail-outline" size={16} color={COLORS.primaryDark} />
+                <Text style={styles.linkBtnText}>Link Email Address</Text>
               </TouchableOpacity>
-            </>
-          ) : (
-            <View style={styles.linkForm}>
-              <TextInput
-                style={styles.input}
-                value={linkEmailValue}
-                onChangeText={setLinkEmailValue}
-                placeholder="Email address"
-                placeholderTextColor={COLORS.textLight}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              <View style={styles.passwordRow}>
-                <TextInput
-                  style={[styles.input, styles.passwordInput]}
-                  value={linkPasswordValue}
-                  onChangeText={setLinkPasswordValue}
-                  placeholder="Password (min 6 chars)"
-                  placeholderTextColor={COLORS.textLight}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  style={styles.passwordToggle}
-                  onPress={() => setShowPassword((v) => !v)}
-                >
-                  <Text style={styles.passwordToggleText}>
-                    {showPassword ? '🙈' : '👁️'}
-                  </Text>
-                </TouchableOpacity>
+            ) : (
+              <View style={styles.linkForm}>
+                <View style={styles.inputWrapper}>
+                  <Ionicons name="mail-outline" size={16} color={COLORS.textTertiary} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    value={linkEmailValue}
+                    onChangeText={setLinkEmailValue}
+                    placeholder="Email address"
+                    placeholderTextColor={COLORS.textTertiary}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                </View>
+                <View style={[styles.inputWrapper, { marginTop: SPACING.xs }]}>
+                  <Ionicons name="lock-closed-outline" size={16} color={COLORS.textTertiary} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { paddingRight: 40 }]}
+                    value={linkPasswordValue}
+                    onChangeText={setLinkPasswordValue}
+                    placeholder="Password (min 6 chars)"
+                    placeholderTextColor={COLORS.textTertiary}
+                    secureTextEntry={!showPassword}
+                  />
+                  <Pressable
+                    style={styles.passwordEye}
+                    onPress={() => setShowPassword((v) => !v)}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={16}
+                      color={COLORS.textSecondary}
+                    />
+                  </Pressable>
+                </View>
+                <View style={styles.linkFormActions}>
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    onPress={() => setShowLinkEmail(false)}
+                  >
+                    <Text style={styles.cancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.linkBtn, { flex: 1, marginTop: 0 }, isLinking && styles.btnDisabled]}
+                    onPress={handleLinkEmail}
+                    disabled={isLinking}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.linkBtnText}>
+                      {isLinking ? 'Linking...' : 'Link Email'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.linkActions}>
-                <TouchableOpacity
-                  style={styles.linkCancelButton}
-                  onPress={() => setShowLinkEmail(false)}
-                >
-                  <Text style={styles.linkCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.saveButton, { flex: 1 }, isLinking && styles.disabled]}
-                  onPress={handleLinkEmail}
-                  disabled={isLinking}
-                >
-                  <Text style={styles.saveButtonText}>
-                    {isLinking ? 'Linking...' : 'Link Email'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
-      ) : (
-        <View style={styles.card}>
-          <View style={styles.emailLinkedRow}>
-            <Text style={styles.emailLinkedIcon}>✅</Text>
-            <View style={styles.emailLinkedInfo}>
-              <Text style={styles.emailLinkedLabel}>Email Linked</Text>
-              <Text style={styles.emailLinkedValue}>{linkedEmail ?? 'Confirmed'}</Text>
-            </View>
-          </View>
+            )}
 
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-            <Text style={styles.signOutButtonText}>Sign Out</Text>
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={16} color={COLORS.textSecondary} />
+              <Text style={styles.signOutBtnText}>Sign Out</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <View style={styles.emailLinkedRow}>
+              <View style={[styles.anonymousIconBg, { backgroundColor: COLORS.successBg }]}>
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.success} />
+              </View>
+              <View style={styles.anonymousInfo}>
+                <Text style={styles.anonymousTitle}>Email Linked</Text>
+                <Text style={styles.anonymousSub}>{linkedEmail ?? 'Confirmed'}</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={16} color={COLORS.textSecondary} />
+              <Text style={styles.signOutBtnText}>Sign Out</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.deleteBtn, isDeleting && styles.btnDisabled]}
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+            >
+              <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+              <Text style={styles.deleteBtnText}>
+                {isDeleting ? 'Deleting...' : 'Delete Account'}
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </Animated.View>
+
+      {/* ─── About ─── */}
+      <SectionHeader title="About" />
+      <Animated.View entering={FadeInDown.delay(350).duration(400).springify()} style={styles.card}>
+        <View style={styles.aboutRow}>
+          <View style={styles.aboutAppIcon}>
+            <Text style={styles.aboutAppEmoji}>👑</Text>
+          </View>
+          <View style={styles.aboutInfo}>
+            <Text style={styles.aboutAppName}>Royal Throne</Text>
+            <Text style={styles.aboutVersion}>v{appVersion}</Text>
+          </View>
+        </View>
+        <Text style={styles.aboutTagline}>Built with love (and fiber).</Text>
+
+        <View style={styles.aboutLinks}>
+          <TouchableOpacity
+            style={styles.aboutLinkRow}
+            onPress={() => router.push('/about')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="information-circle-outline" size={18} color={COLORS.accent} />
+            <Text style={styles.aboutLinkText}>About Royal Throne</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
           </TouchableOpacity>
+
+          <View style={styles.aboutLinkDivider} />
 
           <TouchableOpacity
-            style={[styles.deleteButton, isDeleting && styles.disabled]}
-            onPress={handleDeleteAccount}
-            disabled={isDeleting}
+            style={styles.aboutLinkRow}
+            onPress={() => router.push('/privacy')}
+            activeOpacity={0.7}
           >
-            <Text style={styles.deleteButtonText}>
-              {isDeleting ? 'Deleting...' : 'Delete Account'}
-            </Text>
+            <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.accent} />
+            <Text style={styles.aboutLinkText}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.aboutLinkDivider} />
+
+          <TouchableOpacity
+            style={styles.aboutLinkRow}
+            onPress={() => router.push('/contact')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chatbubble-outline" size={18} color={COLORS.accent} />
+            <Text style={styles.aboutLinkText}>Contact & Feedback</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textTertiary} />
           </TouchableOpacity>
         </View>
-      )}
+      </Animated.View>
 
-      {/* About */}
-      <Text style={styles.sectionTitle}>About</Text>
-      <View style={styles.card}>
-        <Text style={styles.aboutText}>
-          Throne v{appVersion}{'\n'}
-          Built with love (and fiber).
-        </Text>
-      </View>
+      <View style={{ height: SPACING.xl }} />
     </ScrollView>
   );
 }
@@ -597,307 +708,164 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: 16,
-    paddingBottom: 48,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING['3xl'],
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 20,
-    marginBottom: 8,
+    letterSpacing: 1.2,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xs + 2,
     paddingHorizontal: 4,
   },
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    borderColor: COLORS.borderLight,
+    ...SHADOWS.subtle,
   },
-  rankHeader: {
+
+  // Profile
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.xs,
+    letterSpacing: 0.2,
+  },
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    backgroundColor: COLORS.surfaceElevated,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    paddingHorizontal: SPACING.sm,
   },
-  rankEmoji: {
-    fontSize: 40,
-  },
-  rankInfo: {
-    flex: 1,
-  },
-  rankName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  rankDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  totalXP: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginTop: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: 6,
+  inputIcon: {
+    marginRight: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
+    flex: 1,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: 15,
     color: COLORS.text,
-    backgroundColor: COLORS.surfaceElevated,
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: SPACING.xs,
+    marginBottom: SPACING.md,
   },
-  emojiButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  emojiBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceElevated,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  emojiButtonSelected: {
+  emojiBtnSelected: {
     borderColor: COLORS.accent,
-    backgroundColor: COLORS.accent + '15',
+    backgroundColor: COLORS.accent + '12',
+  },
+  emojiBtnLocked: {
+    opacity: 0.5,
   },
   emojiText: {
-    fontSize: 24,
+    fontSize: 22,
   },
-  saveButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 14,
-    borderRadius: 12,
+  saveBtn: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+  },
+  saveBtnGradient: {
+    paddingVertical: 13,
     alignItems: 'center',
   },
-  saveButtonText: {
+  saveBtnText: {
     color: COLORS.primaryDark,
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
   },
-  disabled: {
-    opacity: 0.6,
-  },
-  accountInfo: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  linkHint: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 16,
-    lineHeight: 18,
-  },
-  achievementGrid: {
+
+  // Rank
+  rankRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  achievementItem: {
-    width: '30%',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderRadius: 12,
+    gap: SPACING.sm,
+  },
+  rankEmojiCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: COLORS.surfaceElevated,
-  },
-  achievementUnlocked: {
-    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.accent,
+    borderColor: COLORS.borderLight,
   },
-  achievementEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
+  rankEmoji: {
+    fontSize: 26,
   },
-  achievementName: {
+  rankInfo: {
+    flex: 1,
+  },
+  rankName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  rankDesc: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  totalXP: {
+    textAlign: 'center',
     fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.text,
-    textAlign: 'center',
+    color: COLORS.textTertiary,
+    marginTop: SPACING.xs,
   },
-  achievementLocked: {
-    color: COLORS.textLight,
-  },
-  achievementCount: {
-    textAlign: 'center',
+
+  // Titles
+  hintText: {
     fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  settingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  settingDescription: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  linkButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  linkButtonText: {
-    color: COLORS.primaryDark,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  linkForm: {
-    marginBottom: 12,
-  },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  passwordInput: {
-    flex: 1,
-    marginTop: 0,
-  },
-  passwordToggle: {
-    position: 'absolute',
-    right: 12,
-    padding: 4,
-  },
-  passwordToggleText: {
-    fontSize: 20,
-  },
-  linkActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  linkCancelButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  linkCancelText: {
-    color: COLORS.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emailLinkedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  emailLinkedIcon: {
-    fontSize: 24,
-  },
-  emailLinkedInfo: {
-    flex: 1,
-  },
-  emailLinkedLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  emailLinkedValue: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  signOutButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: COLORS.surfaceElevated,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  signOutButtonText: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    marginTop: 10,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.error,
-  },
-  deleteButtonText: {
-    color: COLORS.error,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  aboutText: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  emojiButtonLocked: {
-    opacity: 0.6,
-    borderColor: COLORS.border,
-  },
-  titleHint: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginBottom: 12,
+    color: COLORS.textTertiary,
+    marginBottom: SPACING.sm,
   },
   titleGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.xs,
   },
   titleItem: {
-    width: '30%',
+    width: '30.5%',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: SPACING.sm,
     paddingHorizontal: 4,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     backgroundColor: COLORS.surfaceElevated,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   titleItemSelected: {
     borderColor: COLORS.accent,
-    backgroundColor: COLORS.accent + '15',
+    backgroundColor: COLORS.accent + '10',
   },
   titleItemLocked: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   titleEmoji: {
-    fontSize: 24,
+    fontSize: 22,
     marginBottom: 4,
   },
   titleName: {
@@ -910,6 +878,267 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
   },
   titleNameLocked: {
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
+  },
+
+  // Achievements
+  achievementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  achievementItem: {
+    width: '30.5%',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: 4,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surfaceElevated,
+  },
+  achievementUnlocked: {
+    backgroundColor: COLORS.accent + '10',
+    borderWidth: 1,
+    borderColor: COLORS.accent + '30',
+  },
+  achievementEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  achievementName: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  achievementNameLocked: {
+    color: COLORS.textTertiary,
+  },
+  achievementCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  achievementCount: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+  },
+  achievementProgress: {
+    flex: 1,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: RADIUS.full,
+    overflow: 'hidden',
+  },
+  achievementProgressFill: {
+    height: 4,
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.full,
+  },
+
+  // Setting row
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  settingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingIconText: {
+    fontSize: 17,
+  },
+  settingInfo: {
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  settingDesc: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+
+  // Account
+  anonymousWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  anonymousIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.warningBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  anonymousIcon: {
+    fontSize: 18,
+  },
+  anonymousInfo: {
+    flex: 1,
+  },
+  anonymousTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  anonymousSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    lineHeight: 17,
+  },
+  linkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: COLORS.accent,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.xs,
+  },
+  linkBtnText: {
+    color: COLORS.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  linkForm: {
+    gap: 0,
+    marginBottom: SPACING.sm,
+  },
+  linkFormActions: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    marginTop: SPACING.xs,
+    alignItems: 'center',
+  },
+  cancelBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.sm,
+  },
+  cancelBtnText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  passwordEye: {
+    position: 'absolute',
+    right: SPACING.sm,
+    padding: 4,
+  },
+  emailLinkedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  signOutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surfaceElevated,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: SPACING.xs,
+  },
+  signOutBtnText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.error + '35',
+    backgroundColor: COLORS.errorBg,
+  },
+  deleteBtnText: {
+    color: COLORS.error,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+
+  // About
+  aboutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  aboutAppIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.accent + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accent + '20',
+  },
+  aboutAppEmoji: {
+    fontSize: 22,
+  },
+  aboutInfo: {},
+  aboutAppName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  aboutVersion: {
+    fontSize: 12,
+    color: COLORS.textTertiary,
+    marginTop: 1,
+  },
+  aboutTagline: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontStyle: 'italic',
+  },
+  aboutLinks: {
+    marginTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: SPACING.sm,
+  },
+  aboutLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  aboutLinkText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  aboutLinkDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginLeft: 34,
   },
 });

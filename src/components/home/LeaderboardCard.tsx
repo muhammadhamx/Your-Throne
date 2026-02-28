@@ -1,13 +1,10 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/stores/authStore';
 import { getLeaderboard, type LeaderboardEntry } from '@/lib/database';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
 
 const THRONE_LABELS = [
   'Supreme Sitter',
@@ -22,32 +19,48 @@ const HEADER_QUIPS = [
   'Hall of Throne Fame',
 ];
 
-function Row({
-  entry,
-  index,
-  isMe,
-}: {
-  entry: LeaderboardEntry;
-  index: number;
-  isMe: boolean;
-}) {
+function getRankBackground(index: number): readonly [string, string] {
+  switch (index) {
+    case 0: return ['#F5A623', '#E8940A'] as const;
+    case 1: return ['#9BA8B5', '#7A8A9A'] as const;
+    case 2: return ['#CD7F32', '#A0622A'] as const;
+    default: return [COLORS.surfaceElevated, COLORS.surfaceElevated] as const;
+  }
+}
+
+function Row({ entry, index, isMe }: { entry: LeaderboardEntry; index: number; isMe: boolean }) {
   const medal = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
+  const isTop3 = index < 3;
+  const rankBg = isTop3 ? getRankBackground(index) : null;
 
   return (
-    <View style={[styles.row, isMe && styles.rowHighlight, index === 0 && styles.rowFirst]}>
+    <View style={[styles.row, isMe && !isTop3 && styles.rowHighlight]}>
+      {/* Rank */}
       <View style={styles.rankCol}>
         {medal ? (
-          <Text style={[styles.medal, index === 0 && styles.medalFirst]}>{medal}</Text>
+          <Text style={styles.medal}>{medal}</Text>
         ) : (
-          <Text style={styles.rankNumber}>{index + 1}</Text>
+          <Text style={styles.rankNum}>{index + 1}</Text>
         )}
       </View>
-      <Text style={[styles.avatar, index === 0 && styles.avatarFirst]}>
-        {entry.avatar_emoji}
-      </Text>
+
+      {/* Avatar */}
+      <View style={[
+        styles.avatarCircle,
+        isTop3 && { backgroundColor: rankBg ? rankBg[0] + '22' : 'transparent' },
+        isMe && { borderColor: COLORS.accent + '60', borderWidth: 1.5 },
+      ]}>
+        <Text style={styles.avatarEmoji}>{entry.avatar_emoji}</Text>
+      </View>
+
+      {/* Name + label */}
       <View style={styles.nameCol}>
         <Text
-          style={[styles.name, isMe && styles.nameHighlight, index === 0 && styles.nameFirst]}
+          style={[
+            styles.name,
+            isMe && styles.nameSelf,
+            index === 0 && styles.nameFirst,
+          ]}
           numberOfLines={1}
         >
           {entry.display_name || 'Anonymous Pooper'}{isMe ? ' (You)' : ''}
@@ -56,8 +69,10 @@ function Row({
           <Text style={styles.throneLabel}>{THRONE_LABELS[index]}</Text>
         )}
       </View>
+
+      {/* XP */}
       <View style={styles.xpCol}>
-        <Text style={[styles.xp, isMe && styles.xpHighlight]}>
+        <Text style={[styles.xp, isMe && styles.xpSelf]}>
           {entry.xp.toLocaleString()}
         </Text>
         <Text style={styles.xpUnit}>XP</Text>
@@ -96,65 +111,63 @@ export function LeaderboardCard() {
   const top3 = allEntries.slice(0, 3);
   const totalCount = allEntries.length;
   const userIndex = allEntries.findIndex((e) => e.id === userId);
-  // Show user row separately if they're not already in top 3
   const userInTop3 = userIndex >= 0 && userIndex < 3;
   const showUserRow = userIndex >= 3;
   const userEntry = userIndex >= 0 ? allEntries[userIndex] : null;
 
   return (
-    <Animated.View entering={FadeInDown.delay(200).springify().damping(18)} style={styles.container}>
+    <Animated.View
+      entering={FadeInDown.delay(250).duration(500).springify()}
+      style={styles.card}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerEmoji}>🏆</Text>
+          <View style={styles.trophyCircle}>
+            <Text style={styles.trophyEmoji}>🏆</Text>
+          </View>
           <View>
-            <Text style={styles.headerTitle}>Throne Royalty</Text>
+            <Text style={styles.headerTitle}>Royal Throne Royalty</Text>
             <Text style={styles.headerQuip}>{quip}</Text>
           </View>
         </View>
-        <View style={styles.countBadge}>
-          <Text style={styles.countText}>{totalCount}</Text>
+        <View style={styles.countPill}>
+          <Text style={styles.countText}>{totalCount} sitters</Text>
         </View>
       </View>
 
-      {/* Top 3 */}
+      {/* Divider */}
+      <View style={styles.divider} />
+
+      {/* Top 3 rows */}
       {top3.map((entry, index) => (
-        <Row
-          key={entry.id}
-          entry={entry}
-          index={index}
-          isMe={entry.id === userId}
-        />
+        <Row key={entry.id} entry={entry} index={index} isMe={entry.id === userId} />
       ))}
 
-      {/* Divider + user's position (if not in top 3) */}
+      {/* Separator + user row if outside top 3 */}
       {showUserRow && userEntry && (
         <>
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>
-              {totalCount} throne sitters total
-            </Text>
-            <View style={styles.dividerLine} />
+          <View style={styles.separatorRow}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.separatorText}>{totalCount} total</Text>
+            <View style={styles.separatorLine} />
           </View>
           <Row entry={userEntry} index={userIndex} isMe />
         </>
       )}
 
-      {/* If user IS in top 3, just show total count at the bottom */}
+      {/* Footer note */}
       {userInTop3 && totalCount > 3 && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            You're top {userIndex + 1} out of {totalCount} throne sitters 🔥
+            You're top {userIndex + 1} of {totalCount} throne sitters 🔥
           </Text>
         </View>
       )}
-
-      {/* If user not found in leaderboard at all (shouldn't happen now) */}
       {userIndex < 0 && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            You're on the board — start a session to climb up! 🚽
+            Start a session to appear on the board 🚽
           </Text>
         </View>
       )}
@@ -163,13 +176,13 @@ export function LeaderboardCard() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-    marginTop: 12,
+  card: {
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
     overflow: 'hidden',
     ...SHADOWS.card,
   },
@@ -177,94 +190,106 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    paddingBottom: 10,
+    padding: SPACING.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    flex: 1,
+    gap: SPACING.sm,
   },
-  headerEmoji: {
-    fontSize: 26,
+  trophyCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.accentWarm + '18',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accentWarm + '22',
+  },
+  trophyEmoji: {
+    fontSize: 18,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '800',
     color: COLORS.text,
   },
   headerQuip: {
-    fontSize: 12,
-    color: COLORS.textLight,
+    fontSize: 11,
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
     marginTop: 1,
   },
-  countBadge: {
+  countPill: {
     backgroundColor: COLORS.surfaceElevated,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
   countText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: COLORS.accent,
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SPACING.md,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    gap: 10,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
   },
   rowHighlight: {
-    backgroundColor: COLORS.accent + '12',
-  },
-  rowFirst: {
-    paddingVertical: 14,
+    backgroundColor: COLORS.accent + '0C',
   },
   rankCol: {
-    width: 28,
+    width: 26,
     alignItems: 'center',
   },
   medal: {
-    fontSize: 18,
+    fontSize: 20,
   },
-  medalFirst: {
-    fontSize: 22,
-  },
-  rankNumber: {
-    fontSize: 14,
+  rankNum: {
+    fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
   },
-  avatar: {
-    fontSize: 22,
+  avatarCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceElevated,
   },
-  avatarFirst: {
-    fontSize: 28,
+  avatarEmoji: {
+    fontSize: 18,
   },
   nameCol: {
     flex: 1,
   },
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.text,
   },
-  nameHighlight: {
+  nameSelf: {
     color: COLORS.accent,
   },
   nameFirst: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
   },
   throneLabel: {
-    fontSize: 11,
-    color: COLORS.textLight,
+    fontSize: 10,
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
     marginTop: 1,
   },
@@ -272,44 +297,44 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   xp: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: COLORS.textSecondary,
   },
-  xpHighlight: {
+  xpSelf: {
     color: COLORS.accent,
   },
   xpUnit: {
-    fontSize: 10,
-    color: COLORS.textLight,
-    fontWeight: '600',
+    fontSize: 9,
+    color: COLORS.textTertiary,
+    fontWeight: '700',
   },
-  dividerRow: {
+  separatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 10,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    gap: SPACING.xs,
   },
-  dividerLine: {
+  separatorLine: {
     flex: 1,
     height: 1,
     backgroundColor: COLORS.border,
   },
-  dividerText: {
-    fontSize: 11,
-    color: COLORS.textLight,
+  separatorText: {
+    fontSize: 10,
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
   },
   footer: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: COLORS.textSecondary,
     textAlign: 'center',

@@ -7,32 +7,41 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useLeagueStore } from '@/stores/leagueStore';
 import type { League } from '@/types/database';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
-function LeagueRow({ league }: { league: League }) {
+function LeagueRow({ league, index }: { league: League; index: number }) {
   return (
-    <TouchableOpacity
-      style={styles.leagueCard}
-      onPress={() => router.push(`/leagues/${league.id}`)}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.leagueEmoji}>{league.emoji}</Text>
-      <View style={styles.leagueInfo}>
-        <Text style={styles.leagueName} numberOfLines={1}>
-          {league.name}
-        </Text>
-        {league.description && (
-          <Text style={styles.leagueDesc} numberOfLines={1}>
-            {league.description}
+    <Animated.View entering={FadeInDown.delay(index * 80).springify().damping(18)}>
+      <TouchableOpacity
+        style={styles.leagueCard}
+        onPress={() => router.push(`/leagues/${league.id}`)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.leagueEmojiCircle}>
+          <Text style={styles.leagueEmoji}>{league.emoji}</Text>
+        </View>
+        <View style={styles.leagueInfo}>
+          <Text style={styles.leagueName} numberOfLines={1}>
+            {league.name}
           </Text>
-        )}
-      </View>
-      <Text style={styles.leagueArrow}>→</Text>
-    </TouchableOpacity>
+          {league.description && (
+            <Text style={styles.leagueDesc} numberOfLines={1}>
+              {league.description}
+            </Text>
+          )}
+        </View>
+        <View style={styles.arrowCircle}>
+          <Ionicons name="chevron-forward" size={14} color={COLORS.accent} />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -53,51 +62,88 @@ export default function LeaguesListScreen() {
   }, [userId, loadMyLeagues]);
 
   const renderItem = useCallback(
-    ({ item }: { item: League }) => <LeagueRow league={item} />,
+    ({ item, index }: { item: League; index: number }) => (
+      <LeagueRow league={item} index={index} />
+    ),
     []
   );
 
   const keyExtractor = useCallback((item: League) => item.id, []);
 
+  const ListHeader = (
+    <Animated.View entering={FadeInDown.delay(50).springify().damping(18)} style={styles.actions}>
+      <TouchableOpacity
+        style={styles.actionButtonPrimary}
+        onPress={() => router.push('/leagues/create')}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={GRADIENTS.button}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.actionGradient}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={COLORS.primaryDark} />
+          <Text style={styles.actionTextPrimary}>Create League</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.actionButtonSecondary}
+        onPress={() => router.push('/leagues/join')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="key-outline" size={18} color={COLORS.accent} />
+        <Text style={styles.actionTextSecondary}>Join with Code</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const ListEmpty = !isLoading ? (
+    <Animated.View
+      entering={FadeInDown.delay(200).springify().damping(18)}
+      style={styles.emptyContainer}
+    >
+      <View style={styles.emptyIconCircle}>
+        <Text style={styles.emptyEmoji}>🏰</Text>
+      </View>
+      <Text style={styles.emptyTitle}>No Leagues Yet</Text>
+      <Text style={styles.emptyText}>
+        Create a private league and invite friends, or join one using a 6-character code.
+      </Text>
+    </Animated.View>
+  ) : null;
+
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Throne Leagues' }} />
+      <Stack.Screen
+        options={{
+          title: 'Royal Throne Leagues',
+          headerStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          headerTintColor: COLORS.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 17, color: COLORS.text },
+        }}
+      />
+
+      {leagues.length > 0 && (
+        <Animated.View
+          entering={FadeInDown.delay(30).springify().damping(18)}
+          style={styles.sectionHeader}
+        >
+          <Text style={styles.sectionTitle}>My Leagues</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{leagues.length}</Text>
+          </View>
+        </Animated.View>
+      )}
 
       <FlatList
         data={leagues}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ListHeaderComponent={
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push('/leagues/create')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionEmoji}>⚔️</Text>
-              <Text style={styles.actionText}>Create League</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.actionJoin]}
-              onPress={() => router.push('/leagues/join')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionEmoji}>🔑</Text>
-              <Text style={styles.actionJoinText}>Join League</Text>
-            </TouchableOpacity>
-          </View>
-        }
-        ListEmptyComponent={
-          !isLoading ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyEmoji}>🏰</Text>
-              <Text style={styles.emptyTitle}>No Leagues Yet</Text>
-              <Text style={styles.emptyText}>
-                Create a league and invite your friends, or join one with a code!
-              </Text>
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={ListEmpty}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -118,99 +164,158 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.sm,
+    gap: SPACING.xs,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  countBadge: {
+    backgroundColor: COLORS.accent + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.accent + '30',
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: COLORS.accent,
+  },
   list: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: SPACING.md,
+    paddingBottom: SPACING['2xl'],
+    gap: SPACING.xs,
   },
   actions: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
-  actionButton: {
+  actionButtonPrimary: {
+    flex: 1,
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    ...SHADOWS.glow,
+  },
+  actionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  actionTextPrimary: {
+    color: COLORS.primaryDark,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  actionButtonSecondary: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.accent,
-    paddingVertical: 14,
-    borderRadius: 14,
-    ...SHADOWS.glow,
-  },
-  actionJoin: {
+    gap: SPACING.xs,
     backgroundColor: COLORS.surfaceElevated,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: COLORS.accent + '30',
+    ...SHADOWS.card,
   },
-  actionEmoji: {
-    fontSize: 18,
-  },
-  actionText: {
-    color: COLORS.primaryDark,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  actionJoinText: {
-    color: COLORS.text,
-    fontSize: 15,
+  actionTextSecondary: {
+    color: COLORS.accent,
+    fontSize: 14,
     fontWeight: '700',
   },
   leagueCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 8,
-    gap: 12,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    gap: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.card,
   },
+  leagueEmojiCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    flexShrink: 0,
+  },
   leagueEmoji: {
-    fontSize: 28,
+    fontSize: 22,
   },
   leagueInfo: {
     flex: 1,
   },
   leagueName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.text,
   },
   leagueDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
   },
-  leagueArrow: {
-    fontSize: 18,
-    color: COLORS.textLight,
+  arrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.accent + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.accent + '25',
+    flexShrink: 0,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 32,
+    paddingVertical: SPACING['4xl'],
+    paddingHorizontal: SPACING['2xl'],
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   emptyEmoji: {
-    fontSize: 56,
-    marginBottom: 12,
+    fontSize: 36,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: SPACING.xs,
   },
   emptyText: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
 });

@@ -3,15 +3,16 @@ import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
   interpolate,
-  interpolateColor,
 } from 'react-native-reanimated';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { COLORS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, ANIMATION } from '@/utils/constants';
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -23,26 +24,20 @@ interface TabMeta {
 
 const TAB_META: Record<string, TabMeta> = {
   session: { label: 'Throne', icon: 'home-outline', iconFocused: 'home' },
-  stats: { label: 'Stats', icon: 'bar-chart-outline', iconFocused: 'bar-chart' },
+  stats: { label: 'Stats', icon: 'stats-chart-outline', iconFocused: 'stats-chart' },
   predict: { label: 'Predict', icon: 'sparkles-outline', iconFocused: 'sparkles' },
   chat: { label: 'Chat', icon: 'chatbubble-ellipses-outline', iconFocused: 'chatbubble-ellipses' },
 };
 
-const SPRING_CONFIG = { damping: 16, stiffness: 200, mass: 0.8 };
-
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
-
-// ─── Single animated tab ───
+// ─── Single animated tab item ────────────────────────────────────────────────
 
 const TabItem = memo(function TabItem({
   routeName,
-  routeKey,
   focused,
   onPress,
   onLongPress,
 }: {
   routeName: string;
-  routeKey: string;
   focused: boolean;
   onPress: () => void;
   onLongPress: () => void;
@@ -53,31 +48,41 @@ const TabItem = memo(function TabItem({
   const progress = useSharedValue(focused ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withSpring(focused ? 1 : 0, SPRING_CONFIG);
+    progress.value = withSpring(focused ? 1 : 0, ANIMATION.spring);
   }, [focused, progress]);
 
-  // Gold pill: fades in and scales up
+  // Pill scale/opacity
   const pillStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
+    opacity: interpolate(progress.value, [0, 0.5, 1], [0, 0.4, 1]),
     transform: [
-      { scale: interpolate(progress.value, [0, 1], [0.6, 1]) },
+      { scaleX: interpolate(progress.value, [0, 1], [0.5, 1]) },
+      { scaleY: interpolate(progress.value, [0, 1], [0.7, 1]) },
     ],
   }));
 
-  // Icon: bounces slightly
+  // Icon scale bounce
   const iconStyle = useAnimatedStyle(() => ({
     transform: [
-      { scale: interpolate(progress.value, [0, 0.5, 1], [1, 1.15, 1]) },
+      { scale: interpolate(progress.value, [0, 0.5, 1], [1, 1.18, 1]) },
+      { translateY: interpolate(progress.value, [0, 1], [0, -1]) },
     ],
   }));
 
-  // Label: fades in and slides from the left
+  // Label slide-in
   const labelStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.3, 1], [0, 1]),
-    maxWidth: interpolate(progress.value, [0, 1], [0, 80]),
-    marginLeft: interpolate(progress.value, [0, 1], [0, 6]),
+    opacity: interpolate(progress.value, [0.4, 1], [0, 1]),
+    maxWidth: interpolate(progress.value, [0, 1], [0, 72]),
+    marginLeft: interpolate(progress.value, [0, 1], [0, 5]),
     transform: [
-      { translateX: interpolate(progress.value, [0, 1], [-8, 0]) },
+      { translateX: interpolate(progress.value, [0, 1], [-6, 0]) },
+    ],
+  }));
+
+  // Indicator dot under inactive tabs
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 0.4], [0, 1]) * (1 - progress.value),
+    transform: [
+      { scale: interpolate(progress.value, [0, 1], [1, 0]) },
     ],
   }));
 
@@ -89,27 +94,26 @@ const TabItem = memo(function TabItem({
       onLongPress={onLongPress}
       style={styles.tabItem}
     >
-      {/* Gold pill background — always rendered, visibility driven by progress */}
-      <AnimatedLinearGradient
-        colors={['#62EAAA', '#34D399'] as const}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.pill, pillStyle]}
-      />
+      {/* Animated pill background */}
+      <Animated.View style={[styles.pillContainer, pillStyle]}>
+        <LinearGradient
+          colors={GRADIENTS.button}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.pill}
+        />
+      </Animated.View>
 
-      {/* Content layer on top of the pill */}
+      {/* Icon + label row */}
       <View style={styles.contentRow} pointerEvents="none">
         <Animated.View style={iconStyle}>
           <Ionicons
             name={focused ? meta.iconFocused : meta.icon}
-            size={20}
-            color={focused ? COLORS.primaryDark : COLORS.textLight}
+            size={21}
+            color={focused ? COLORS.primaryDark : COLORS.textTertiary}
           />
         </Animated.View>
-        <Animated.Text
-          style={[styles.label, labelStyle]}
-          numberOfLines={1}
-        >
+        <Animated.Text style={[styles.label, labelStyle]} numberOfLines={1}>
           {meta.label}
         </Animated.Text>
       </View>
@@ -117,7 +121,7 @@ const TabItem = memo(function TabItem({
   );
 });
 
-// ─── Custom Tab Bar ───
+// ─── Custom Tab Bar ───────────────────────────────────────────────────────────
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   return (
@@ -145,7 +149,6 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             <TabItem
               key={route.key}
               routeName={route.name}
-              routeKey={route.key}
               focused={focused}
               onPress={onPress}
               onLongPress={onLongPress}
@@ -157,28 +160,42 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   );
 }
 
-// ─── Layout ───
+// ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function TabsLayout() {
+  const navigation = useNavigation();
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        headerStyle: { backgroundColor: COLORS.background },
+        headerStyle: {
+          backgroundColor: COLORS.background,
+        },
         headerShadowVisible: false,
         headerTintColor: COLORS.text,
         headerTitleStyle: {
           fontWeight: '800',
-          fontSize: 20,
+          fontSize: 19,
           letterSpacing: -0.5,
+          color: COLORS.text,
         },
+        headerLeft: () => (
+          <Pressable
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={styles.hamburgerBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="menu" size={22} color={COLORS.textSecondary} />
+          </Pressable>
+        ),
         headerRight: () => (
           <Pressable
             onPress={() => router.push('/settings')}
             style={styles.settingsBtn}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="settings-outline" size={20} color={COLORS.textSecondary} />
+            <Ionicons name="settings-outline" size={19} color={COLORS.textSecondary} />
           </Pressable>
         ),
       }}
@@ -191,59 +208,69 @@ export default function TabsLayout() {
   );
 }
 
-// ─── Styles ───
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-const BOTTOM_INSET = Platform.OS === 'ios' ? 24 : 8;
+const BOTTOM_INSET = Platform.OS === 'ios' ? 26 : 10;
 
 const styles = StyleSheet.create({
   barOuter: {
     paddingHorizontal: 16,
     paddingBottom: BOTTOM_INSET,
+    paddingTop: 8,
     backgroundColor: COLORS.background,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
-    borderRadius: 28,
+    borderRadius: RADIUS.xl,
     paddingVertical: 6,
     paddingHorizontal: 6,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    borderColor: COLORS.borderLight,
+    ...SHADOWS.card,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
+    height: 46,
+    position: 'relative',
   },
-  // Gold pill sits absolutely behind the content
-  pill: {
+  pillContainer: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
-    shadowColor: '#62EAAA',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
   },
-  // Icon + label sit on top
+  pill: {
+    flex: 1,
+    borderRadius: RADIUS.lg,
+  },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   label: {
     color: COLORS.primaryDark,
     fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
     overflow: 'hidden',
+  },
+  hamburgerBtn: {
+    marginLeft: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
   },
   settingsBtn: {
     marginRight: 16,
@@ -254,6 +281,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderLight,
   },
 });

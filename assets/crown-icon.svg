@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- Background gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#0E1825"/>
+      <stop offset="100%" stop-color="#080C14"/>
+    </radialGradient>
+    <!-- Crown gold gradient -->
+    <linearGradient id="crownGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="40%" stop-color="#F5A623"/>
+      <stop offset="100%" stop-color="#E8940A"/>
+    </linearGradient>
+    <!-- Crown highlight -->
+    <linearGradient id="crownHighlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF0B3" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Emerald gem gradient -->
+    <radialGradient id="emeraldGem" cx="50%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#5EEFC8"/>
+      <stop offset="100%" stop-color="#00B589"/>
+    </radialGradient>
+    <!-- Glow behind crown -->
+    <radialGradient id="crownGlow" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#F5A623" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#F5A623" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Emerald glow -->
+    <radialGradient id="emeraldGlow" cx="50%" cy="42%" r="20%">
+      <stop offset="0%" stop-color="#00D4A0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#00D4A0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bgGlow)"/>
+
+  <!-- Subtle emerald glow -->
+  <circle cx="512" cy="430" r="260" fill="url(#emeraldGlow)"/>
+
+  <!-- Golden glow behind crown -->
+  <circle cx="512" cy="460" r="320" fill="url(#crownGlow)"/>
+
+  <!-- Crown shadow -->
+  <ellipse cx="512" cy="680" rx="220" ry="25" fill="#000" opacity="0.3"/>
+
+  <!-- Main crown body -->
+  <path d="
+    M 260 580
+    L 310 340
+    L 400 460
+    L 512 280
+    L 624 460
+    L 714 340
+    L 764 580
+    Z
+  " fill="url(#crownGold)" stroke="#E8940A" stroke-width="3"/>
+
+  <!-- Crown highlight overlay -->
+  <path d="
+    M 275 565
+    L 318 352
+    L 400 460
+    L 512 295
+    L 624 460
+    L 706 352
+    L 750 565
+    Z
+  " fill="url(#crownHighlight)"/>
+
+  <!-- Crown base band -->
+  <rect x="248" y="570" width="528" height="70" rx="12" fill="url(#crownGold)" stroke="#E8940A" stroke-width="2"/>
+
+  <!-- Band highlight -->
+  <rect x="258" y="575" width="508" height="25" rx="8" fill="#FFF0B3" opacity="0.15"/>
+
+  <!-- Band decorative line -->
+  <rect x="280" y="600" width="464" height="4" rx="2" fill="#E8940A" opacity="0.5"/>
+
+  <!-- Center emerald gem (big) -->
+  <circle cx="512" cy="600" r="22" fill="url(#emeraldGem)" stroke="#00B589" stroke-width="2"/>
+  <circle cx="506" cy="593" r="6" fill="white" opacity="0.4"/>
+
+  <!-- Left ruby gem -->
+  <circle cx="380" cy="600" r="14" fill="#F87171" stroke="#E55858" stroke-width="2"/>
+  <circle cx="376" cy="595" r="4" fill="white" opacity="0.35"/>
+
+  <!-- Right ruby gem -->
+  <circle cx="644" cy="600" r="14" fill="#F87171" stroke="#E55858" stroke-width="2"/>
+  <circle cx="640" cy="595" r="4" fill="white" opacity="0.35"/>
+
+  <!-- Crown tip gems (emerald) -->
+  <circle cx="512" cy="275" r="16" fill="url(#emeraldGem)" stroke="#00B589" stroke-width="2"/>
+  <circle cx="507" cy="269" r="5" fill="white" opacity="0.4"/>
+
+  <circle cx="310" cy="335" r="13" fill="url(#emeraldGem)" stroke="#00B589" stroke-width="2"/>
+  <circle cx="306" cy="330" r="4" fill="white" opacity="0.35"/>
+
+  <circle cx="714" cy="335" r="13" fill="url(#emeraldGem)" stroke="#00B589" stroke-width="2"/>
+  <circle cx="710" cy="330" r="4" fill="white" opacity="0.35"/>
+
+  <!-- Sparkle effects -->
+  <!-- Top sparkle -->
+  <g transform="translate(580, 310)" opacity="0.9">
+    <line x1="-12" y1="0" x2="12" y2="0" stroke="#FFF0B3" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="0" y1="-12" x2="0" y2="12" stroke="#FFF0B3" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="-8" y1="-8" x2="8" y2="8" stroke="#FFF0B3" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="8" y1="-8" x2="-8" y2="8" stroke="#FFF0B3" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right sparkle -->
+  <g transform="translate(770, 420)" opacity="0.6">
+    <line x1="-8" y1="0" x2="8" y2="0" stroke="#FFF0B3" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#FFF0B3" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Small sparkle left -->
+  <g transform="translate(240, 380)" opacity="0.5">
+    <line x1="-6" y1="0" x2="6" y2="0" stroke="#5EEFC8" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="-6" x2="0" y2="6" stroke="#5EEFC8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- App name -->
+  <text x="512" y="780" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="72" fill="#F0F6FF" text-anchor="middle" letter-spacing="8" opacity="0.9">THRONE</text>
+
+  <!-- Subtle tagline -->
+  <text x="512" y="825" font-family="Arial, Helvetica, sans-serif" font-weight="400" font-size="28" fill="#8EA0B8" text-anchor="middle" letter-spacing="3" font-style="italic" opacity="0.7">your kingdom awaits</text>
+</svg>

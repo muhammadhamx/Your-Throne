@@ -6,10 +6,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useLocalSearchParams, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -17,7 +19,7 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { getChannel, removeChannel } from '@/lib/realtime';
 import { getProfile } from '@/lib/database';
 import * as Haptics from 'expo-haptics';
-import { COLORS } from '@/utils/constants';
+import { COLORS, RADIUS, SPACING, SHADOWS } from '@/utils/constants';
 
 export default function RoomChatScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
@@ -36,10 +38,7 @@ export default function RoomChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const room = rooms.find((r) => r.id === roomId);
   const messages = roomMessages[roomId ?? ''] ?? [];
-  const [myProfile, setMyProfile] = useState<{ display_name: string; avatar_emoji: string }>({
-    display_name: 'Anonymous Pooper',
-    avatar_emoji: '💩',
-  });
+  const [myProfile, setMyProfile] = useState({ display_name: 'Anonymous Pooper', avatar_emoji: '💩' });
   const [senderProfiles, setSenderProfiles] = useState<Record<string, { name: string; emoji: string }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const error = roomErrors?.[roomId ?? ''] ?? null;
@@ -122,21 +121,30 @@ export default function RoomChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
-      <Stack.Screen options={{ title: room?.name ?? 'Chat Room' }} />
+      <Stack.Screen
+        options={{
+          title: room?.name ?? 'Chat Room',
+          headerStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          headerTintColor: COLORS.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 17, color: COLORS.text },
+        }}
+      />
 
       {isLoading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+        <Animated.View entering={FadeIn.duration(300)} style={styles.centered}>
+          <ActivityIndicator size="large" color={COLORS.accent} />
           <Text style={styles.loadingText}>Loading messages...</Text>
-        </View>
+        </Animated.View>
       ) : error ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.errorEmoji}>😿</Text>
+        <Animated.View entering={FadeIn.duration(300)} style={styles.centered}>
+          <Text style={styles.errorOrb}>😿</Text>
+          <Text style={styles.errorTitle}>Something went wrong</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={handleRetry}>
+            <Text style={styles.retryText}>Try Again</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       ) : (
         <FlatList
           ref={flatListRef}
@@ -167,6 +175,11 @@ export default function RoomChatScreen() {
           onContentSizeChange={() => {
             flatListRef.current?.scrollToEnd({ animated: true });
           }}
+          ListEmptyComponent={
+            <View style={styles.emptyChat}>
+              <Text style={styles.emptyChatText}>No messages yet. Say hello!</Text>
+            </View>
+          }
         />
       )}
 
@@ -181,39 +194,56 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   messageList: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: SPACING.md,
+    paddingBottom: SPACING.xs,
   },
-  centerContainer: {
+  centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: SPACING['2xl'],
+    gap: SPACING.sm,
   },
   loadingText: {
-    marginTop: 12,
     fontSize: 14,
     color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
   },
-  errorEmoji: {
+  errorOrb: {
     fontSize: 48,
-    marginBottom: 12,
+  },
+  errorTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   errorText: {
-    fontSize: 16,
-    color: COLORS.text,
+    fontSize: 14,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: 16,
+    lineHeight: 22,
   },
-  retryButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+  retryBtn: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.accent + '40',
+    marginTop: SPACING.xs,
   },
-  retryButtonText: {
-    color: '#FFFFFF',
+  retryText: {
+    color: COLORS.accent,
     fontSize: 14,
     fontWeight: '700',
+  },
+  emptyChat: {
+    alignItems: 'center',
+    paddingVertical: SPACING['4xl'],
+  },
+  emptyChatText: {
+    fontSize: 14,
+    color: COLORS.textTertiary,
+    fontStyle: 'italic',
   },
 });

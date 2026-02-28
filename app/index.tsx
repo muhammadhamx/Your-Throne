@@ -16,7 +16,7 @@ export default function Index() {
   }
 
   if (isAuthenticated) {
-    return <Redirect href="/(tabs)/session" />;
+    return <Redirect href="/(drawer)/(tabs)/session" />;
   }
 
   return <Redirect href="/(auth)/welcome" />;

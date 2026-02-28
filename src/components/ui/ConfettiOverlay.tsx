@@ -30,7 +30,7 @@ export const ConfettiOverlay = forwardRef<ConfettiRef>(function ConfettiOverlay(
         fadeOut
         fallSpeed={3000}
         explosionSpeed={400}
-        colors={['#F5A623', '#8B5E3C', '#C4956A', '#FF8C00', '#4CAF50', '#E8DDD0']}
+        colors={['#00D4A0', '#F5A623', '#5EEFC8', '#60A5FA', '#FBBF24', '#F0F6FF']}
         onAnimationEnd={() => setShow(false)}
       />
     </View>

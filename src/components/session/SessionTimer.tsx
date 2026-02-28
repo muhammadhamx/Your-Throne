@@ -7,13 +7,15 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  withDelay,
+  interpolate,
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useSessionStore } from '@/stores/sessionStore';
 import { formatTimerDisplay } from '@/utils/formatters';
-import { COLORS, GRADIENTS, SHADOWS } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING, ANIMATION } from '@/utils/constants';
 
 interface Props {
   onStart: () => void;
@@ -21,68 +23,96 @@ interface Props {
 }
 
 export function SessionTimer({ onStart, onStop }: Props) {
-  // Subscribe directly — only this component re-renders on tick
   const isActive = useSessionStore((s) => s.isActive);
   const elapsedSeconds = useSessionStore((s) => s.elapsedSeconds);
 
   const buttonScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
+  const glowScale = useSharedValue(1);
+  const pulseRing = useSharedValue(0);
 
   useEffect(() => {
     if (isActive) {
+      // Breathing glow
       glowOpacity.value = withRepeat(
         withSequence(
-          withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+      );
+      // Expanding ring
+      pulseRing.value = withRepeat(
+        withSequence(
+          withTiming(0, { duration: 0 }),
+          withTiming(1, { duration: 1800, easing: Easing.out(Easing.ease) }),
         ),
         -1,
       );
     } else {
-      glowOpacity.value = withTiming(0, { duration: 400 });
+      glowOpacity.value = withTiming(0, { duration: 350 });
+      pulseRing.value = withTiming(0, { duration: 350 });
     }
-  }, [isActive, glowOpacity]);
+  }, [isActive, glowOpacity, pulseRing]);
 
   const handlePressIn = () => {
-    buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+    buttonScale.value = withSpring(0.94, ANIMATION.springSnappy);
   };
-
   const handlePressOut = () => {
-    buttonScale.value = withSpring(1, { damping: 12, stiffness: 300 });
+    buttonScale.value = withSpring(1, ANIMATION.spring);
   };
 
   const handlePress = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (isActive) {
-      onStop();
-    } else {
-      onStart();
-    }
+    if (isActive) onStop();
+    else onStart();
   };
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
 
-  const glowAnimatedStyle = useAnimatedStyle(() => ({
+  const glowRingStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pulseRing.value, [0, 0.3, 1], [0, 0.5, 0]),
+    transform: [
+      { scale: interpolate(pulseRing.value, [0, 1], [1, 1.4]) },
+    ],
+  }));
+
+  const innerGlowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
   }));
 
   return (
     <View style={styles.container}>
-      <View style={styles.timerArea}>
+      {/* Timer display */}
+      <View style={styles.timerSection}>
         <Text style={styles.timerLabel}>
-          {isActive ? 'Session in progress' : 'Ready to go?'}
+          {isActive ? 'SESSION IN PROGRESS' : 'READY TO GO?'}
         </Text>
-        <Text style={[styles.timerText, isActive && styles.timerTextActive]}>
+        <Text style={[styles.timerDisplay, isActive && styles.timerDisplayActive]}>
           {formatTimerDisplay(elapsedSeconds)}
+        </Text>
+        <Text style={styles.timerHint}>
+          {isActive
+            ? 'Tap the button when you\'re done'
+            : 'Tap when you sit on the throne'}
         </Text>
       </View>
 
-      <View style={styles.buttonWrapper}>
+      {/* Button area with rings */}
+      <View style={styles.buttonArea}>
+        {/* Expanding pulse ring (only when active) */}
         {isActive && (
-          <Animated.View style={[styles.glowRing, glowAnimatedStyle]} />
+          <Animated.View style={[styles.pulseRing, glowRingStyle]} />
         )}
 
+        {/* Steady inner glow ring */}
+        {isActive && (
+          <Animated.View style={[styles.innerGlowRing, innerGlowStyle]} />
+        )}
+
+        {/* Main button */}
         <Pressable
           onPress={handlePress}
           onPressIn={handlePressIn}
@@ -95,7 +125,9 @@ export function SessionTimer({ onStart, onStop }: Props) {
               end={{ x: 1, y: 1 }}
               style={styles.button}
             >
-              <Text style={styles.buttonEmoji}>{isActive ? '🛑' : '🚽'}</Text>
+              <Text style={styles.buttonEmoji}>
+                {isActive ? '⏹' : '🚽'}
+              </Text>
               <Text style={[styles.buttonText, isActive && styles.buttonTextStop]}>
                 {isActive ? 'End Session' : 'Start Session'}
               </Text>
@@ -103,12 +135,6 @@ export function SessionTimer({ onStart, onStop }: Props) {
           </Animated.View>
         </Pressable>
       </View>
-
-      <Text style={styles.hint}>
-        {isActive
-          ? "Tap to end when you're done"
-          : 'Tap when you sit on the throne'}
-      </Text>
     </View>
   );
 }
@@ -116,75 +142,84 @@ export function SessionTimer({ onStart, onStop }: Props) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.md,
   },
-  timerArea: {
+  timerSection: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: SPACING.xl,
   },
   timerLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 8,
+    marginBottom: SPACING.xs,
   },
-  timerText: {
-    fontSize: 64,
+  timerDisplay: {
+    fontSize: 68,
     fontWeight: '200',
-    color: COLORS.textLight,
+    color: COLORS.textTertiary,
+    letterSpacing: -3,
     fontVariant: ['tabular-nums'],
-    letterSpacing: -2,
+    lineHeight: 78,
   },
-  timerTextActive: {
+  timerDisplayActive: {
     color: COLORS.accent,
     fontWeight: '300',
   },
-  buttonWrapper: {
+  timerHint: {
+    fontSize: 13,
+    color: COLORS.textTertiary,
+    fontStyle: 'italic',
+    marginTop: SPACING.xs,
+  },
+  buttonArea: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 80,
-    width: 260,
-    marginBottom: 8,
+    width: 270,
+    height: 82,
   },
-  glowRing: {
+  pulseRing: {
     position: 'absolute',
-    width: 260,
-    height: 80,
-    borderRadius: 40,
+    width: 270,
+    height: 82,
+    borderRadius: 41,
     borderWidth: 2,
     borderColor: COLORS.accent,
-    backgroundColor: COLORS.accent + '10',
+    backgroundColor: 'transparent',
+  },
+  innerGlowRing: {
+    position: 'absolute',
+    width: 270,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    backgroundColor: COLORS.accent + '08',
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 48,
+    paddingVertical: 22,
+    paddingHorizontal: SPACING['2xl'] + SPACING.lg,
     borderRadius: 40,
-    minWidth: 240,
-    gap: 12,
+    minWidth: 250,
+    gap: SPACING.sm,
     ...SHADOWS.glow,
   },
   buttonEmoji: {
-    fontSize: 24,
+    fontSize: 22,
   },
   buttonText: {
     color: COLORS.primaryDark,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   buttonTextStop: {
     color: '#FFFFFF',
-  },
-  hint: {
-    marginTop: 12,
-    color: COLORS.textLight,
-    fontSize: 13,
-    fontStyle: 'italic',
   },
 });

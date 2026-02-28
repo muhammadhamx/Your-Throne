@@ -6,7 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { COLORS, SHADOWS } from '@/utils/constants';
+import { COLORS, SHADOWS, RADIUS } from '@/utils/constants';
 
 interface AnimatedCardProps {
   children: ReactNode;
@@ -59,7 +59,7 @@ export function AnimatedCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
+    borderRadius: RADIUS.md,
     padding: 16,
     borderWidth: 1,
     borderColor: COLORS.border,

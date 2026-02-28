@@ -8,8 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Pressable,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -18,7 +21,7 @@ import { getChannel, removeChannel } from '@/lib/realtime';
 import { getProfile } from '@/lib/database';
 import { getRandomItem, BUDDY_ICEBREAKERS } from '@/humor/jokes';
 import * as Haptics from 'expo-haptics';
-import { COLORS } from '@/utils/constants';
+import { COLORS, RADIUS, SPACING, SHADOWS } from '@/utils/constants';
 
 export default function BuddyChatScreen() {
   const { matchId } = useLocalSearchParams<{ matchId: string }>();
@@ -61,10 +64,9 @@ export default function BuddyChatScreen() {
         }
       })
       .on('broadcast', { event: 'end' }, () => {
-        // Clear match state so chat screen doesn't show stale "Active Poop Buddy"
         useChatStore.getState().clearMatch();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert('Chat ended', 'Your poop buddy left. Until next time!', [
+        Alert.alert('Chat Ended', 'Your poop buddy left. Until next time!', [
           { text: 'OK', onPress: () => router.back() },
         ]);
       })
@@ -102,21 +104,16 @@ export default function BuddyChatScreen() {
   };
 
   const handleEnd = () => {
-    Alert.alert('End chat?', 'Your poop buddy will be notified.', [
+    Alert.alert('End Chat?', 'Your poop buddy will be notified.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'End Chat',
         style: 'destructive',
         onPress: async () => {
           if (!matchId || !user?.id) return;
-
-          // Broadcast end event first and wait for it to send
           const channel = getChannel(`buddy:${matchId}`);
           await channel.send({ type: 'broadcast', event: 'end', payload: {} });
-
-          // Small delay to ensure broadcast reaches the other side
           await new Promise((r) => setTimeout(r, 300));
-
           await endMatch(matchId, user.id);
           router.back();
         },
@@ -132,22 +129,32 @@ export default function BuddyChatScreen() {
     >
       <Stack.Screen
         options={{
-          title: 'Poop Buddy',
+          title: buddyProfile.name !== 'Poop Buddy' ? buddyProfile.name : 'Poop Buddy',
+          headerStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          headerTintColor: COLORS.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 17, color: COLORS.text },
           headerRight: () => (
-            <TouchableOpacity onPress={handleEnd}>
-              <Text style={styles.endButton}>End</Text>
-            </TouchableOpacity>
+            <Pressable
+              onPress={handleEnd}
+              style={styles.endBtn}
+            >
+              <Text style={styles.endBtnText}>End</Text>
+            </Pressable>
           ),
         }}
       />
 
+      {/* Icebreaker card */}
       {buddyMessages.length === 0 && (
-        <View style={styles.icebreakerContainer}>
-          <Text style={styles.icebreakerEmoji}>💡</Text>
+        <Animated.View entering={FadeInDown.delay(100).duration(400).springify()} style={styles.icebreakerCard}>
+          <View style={styles.icebreakerIcon}>
+            <Text style={styles.icebreakerEmoji}>💡</Text>
+          </View>
           <Text style={styles.icebreakerText}>
-            Icebreaker: "{icebreaker}"
+            "{icebreaker}"
           </Text>
-        </View>
+        </Animated.View>
       )}
 
       <FlatList
@@ -157,12 +164,8 @@ export default function BuddyChatScreen() {
         renderItem={({ item }) => (
           <MessageBubble
             content={item.content}
-            senderName={
-              item.sender_id === user?.id ? myProfile.display_name : buddyProfile.name
-            }
-            senderEmoji={
-              item.sender_id === user?.id ? myProfile.avatar_emoji : buddyProfile.emoji
-            }
+            senderName={item.sender_id === user?.id ? myProfile.display_name : buddyProfile.name}
+            senderEmoji={item.sender_id === user?.id ? myProfile.avatar_emoji : buddyProfile.emoji}
             isOwn={item.sender_id === user?.id}
             createdAt={item.created_at}
           />
@@ -172,6 +175,11 @@ export default function BuddyChatScreen() {
         onContentSizeChange={() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }}
+        ListEmptyComponent={
+          <View style={styles.emptyChat}>
+            <Text style={styles.emptyChatText}>Break the ice! Say something...</Text>
+          </View>
+        }
       />
 
       <ChatInput onSend={handleSend} placeholder="Say something..." />
@@ -184,32 +192,62 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  messageList: {
-    padding: 16,
-    paddingBottom: 8,
+  endBtn: {
+    marginRight: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    backgroundColor: COLORS.errorBg,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.error + '35',
   },
-  endButton: {
+  endBtnText: {
     color: COLORS.error,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
-  icebreakerContainer: {
+  icebreakerCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.surfaceRaised,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.sm,
+    padding: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  icebreakerIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: COLORS.surfaceElevated,
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   icebreakerEmoji: {
-    fontSize: 16,
+    fontSize: 15,
   },
   icebreakerText: {
     flex: 1,
     fontSize: 13,
     color: COLORS.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 19,
+  },
+  messageList: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xs,
+  },
+  emptyChat: {
+    alignItems: 'center',
+    paddingVertical: SPACING['3xl'],
+  },
+  emptyChatText: {
+    fontSize: 14,
+    color: COLORS.textTertiary,
     fontStyle: 'italic',
   },
 });

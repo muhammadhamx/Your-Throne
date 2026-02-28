@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import {
@@ -118,49 +119,67 @@ export default function RootLayout() {
   }
 
   return (
-    <ConfettiProvider>
-      <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: COLORS.background },
-          headerTintColor: COLORS.text,
-          headerTitleStyle: { fontWeight: '800', fontSize: 18 },
-          contentStyle: { backgroundColor: COLORS.background },
-          headerShadowVisible: false,
-        }}
-      >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="chat/[roomId]"
-          options={{ title: 'Chat Room', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="chat/buddy/[matchId]"
-          options={{ title: 'Poop Buddy', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{ title: 'Settings', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="leagues/index"
-          options={{ title: 'Throne Leagues', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="leagues/[leagueId]"
-          options={{ title: 'League', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="leagues/create"
-          options={{ title: 'Create League', presentation: 'card' }}
-        />
-        <Stack.Screen
-          name="leagues/join"
-          options={{ title: 'Join League', presentation: 'card' }}
-        />
-      </Stack>
-    </ConfettiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ConfettiProvider>
+        <StatusBar style="light" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: COLORS.background },
+            headerTintColor: COLORS.text,
+            headerTitleStyle: { fontWeight: '800', fontSize: 17, color: COLORS.text },
+            contentStyle: { backgroundColor: COLORS.background },
+            headerShadowVisible: false,
+          }}
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="chat/[roomId]"
+            options={{ title: 'Chat Room', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="chat/buddy/[matchId]"
+            options={{ title: 'Poop Buddy', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="settings"
+            options={{ title: 'Settings', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="credits"
+            options={{ title: 'Credits Wallet', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="leagues/index"
+            options={{ title: 'Royal Throne Leagues', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="leagues/[leagueId]"
+            options={{ title: 'League', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="leagues/create"
+            options={{ title: 'Create League', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="leagues/join"
+            options={{ title: 'Join League', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="about"
+            options={{ title: 'About Royal Throne', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="privacy"
+            options={{ title: 'Privacy Policy', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="contact"
+            options={{ title: 'Contact Us', presentation: 'card' }}
+          />
+        </Stack>
+      </ConfettiProvider>
+    </GestureHandlerRootView>
   );
 }
