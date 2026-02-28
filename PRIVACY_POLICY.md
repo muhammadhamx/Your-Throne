@@ -147,4 +147,4 @@ We may update this Privacy Policy from time to time. When we do, we will revise 
 
 If you have any questions, concerns, or requests related to this Privacy Policy or your data, please contact us at:
 
-**Email:** [privacy@throneapp.co](mailto:privacy@throneapp.co)
+**Email:** [royalthroneapp@gmail.com](mailto:royalthroneapp@gmail.com)

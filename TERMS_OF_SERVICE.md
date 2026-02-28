@@ -177,4 +177,4 @@ These Terms, together with our Privacy Policy, constitute the entire agreement b
 
 If you have any questions or concerns about these Terms, please contact us at:
 
-**Email:** [legal@throneapp.co](mailto:legal@throneapp.co)
+**Email:** [royalthroneapp@gmail.com](mailto:royalthroneapp@gmail.com)

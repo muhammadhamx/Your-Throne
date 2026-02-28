@@ -112,7 +112,7 @@ export default function PrivacyPolicyScreen() {
 
       <View style={styles.contactCard}>
         <Text style={styles.contactLabel}>Questions?</Text>
-        <Text style={styles.contactEmail}>privacy@throneapp.co</Text>
+        <Text style={styles.contactEmail}>royalthroneapp@gmail.com</Text>
       </View>
     </ScrollView>
   );

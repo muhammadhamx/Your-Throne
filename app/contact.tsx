@@ -49,12 +49,12 @@ export default function ContactScreen() {
     const body = encodeURIComponent(
       `Type: ${selectedType}\n\n${message.trim()}\n\n---\nSent from Royal Throne App`
     );
-    const mailto = `mailto:feedback@throneapp.co?subject=${subject}&body=${body}`;
+    const mailto = `mailto:royalthroneapp@gmail.com?subject=${subject}&body=${body}`;
 
     Linking.openURL(mailto).catch(() => {
       Alert.alert(
         'No email app?',
-        'Send your feedback directly to feedback@throneapp.co — we read everything!',
+        'Send your feedback directly to royalthroneapp@gmail.com — we read everything!',
       );
     });
   };
@@ -146,9 +146,9 @@ export default function ContactScreen() {
       <View style={styles.directCard}>
         <Text style={styles.directLabel}>Or email us directly at</Text>
         <TouchableOpacity
-          onPress={() => Linking.openURL('mailto:feedback@throneapp.co')}
+          onPress={() => Linking.openURL('mailto:royalthroneapp@gmail.com')}
         >
-          <Text style={styles.directEmail}>feedback@throneapp.co</Text>
+          <Text style={styles.directEmail}>royalthroneapp@gmail.com</Text>
         </TouchableOpacity>
       </View>
 
