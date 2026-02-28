@@ -71,32 +71,57 @@ export default function LeaguesListScreen() {
   const keyExtractor = useCallback((item: League) => item.id, []);
 
   const ListHeader = (
-    <Animated.View entering={FadeInDown.delay(50).springify().damping(18)} style={styles.actions}>
-      <TouchableOpacity
-        style={styles.actionButtonPrimary}
-        onPress={() => router.push('/leagues/create')}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={GRADIENTS.button}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.actionGradient}
+    <View>
+      {/* Global Rankings button */}
+      <Animated.View entering={FadeInDown.delay(30).springify().damping(18)}>
+        <TouchableOpacity
+          style={styles.globalRankingsBtn}
+          onPress={() => router.push('/leagues/global')}
+          activeOpacity={0.8}
         >
-          <Ionicons name="add-circle-outline" size={18} color={COLORS.primaryDark} />
-          <Text style={styles.actionTextPrimary}>Create League</Text>
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={GRADIENTS.gold}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.globalRankingsGradient}
+          >
+            <Text style={styles.globalRankingsEmoji}>⚔️</Text>
+            <View style={styles.globalRankingsInfo}>
+              <Text style={styles.globalRankingsTitle}>Global League Rankings</Text>
+              <Text style={styles.globalRankingsDesc}>See how leagues compete worldwide</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.primaryDark} />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
-      <TouchableOpacity
-        style={styles.actionButtonSecondary}
-        onPress={() => router.push('/leagues/join')}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="key-outline" size={18} color={COLORS.accent} />
-        <Text style={styles.actionTextSecondary}>Join with Code</Text>
-      </TouchableOpacity>
-    </Animated.View>
+      <Animated.View entering={FadeInDown.delay(50).springify().damping(18)} style={styles.actions}>
+        <TouchableOpacity
+          style={styles.actionButtonPrimary}
+          onPress={() => router.push('/leagues/create')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={GRADIENTS.button}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.actionGradient}
+          >
+            <Ionicons name="add-circle-outline" size={18} color={COLORS.primaryDark} />
+            <Text style={styles.actionTextPrimary}>Create League</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionButtonSecondary}
+          onPress={() => router.push('/leagues/join')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="key-outline" size={18} color={COLORS.accent} />
+          <Text style={styles.actionTextSecondary}>Join with Code</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
   );
 
   const ListEmpty = !isLoading ? (
@@ -195,6 +220,37 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     paddingBottom: SPACING['2xl'],
     gap: SPACING.xs,
+  },
+  globalRankingsBtn: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    marginBottom: SPACING.sm,
+    ...SHADOWS.glowWarm,
+  },
+  globalRankingsGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    gap: SPACING.sm,
+  },
+  globalRankingsEmoji: {
+    fontSize: 22,
+  },
+  globalRankingsInfo: {
+    flex: 1,
+  },
+  globalRankingsTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+  },
+  globalRankingsDesc: {
+    fontSize: 11,
+    color: COLORS.primaryDark,
+    opacity: 0.7,
+    marginTop: 1,
   },
   actions: {
     flexDirection: 'row',

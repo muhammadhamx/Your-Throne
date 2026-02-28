@@ -101,6 +101,69 @@ export interface LeagueLeaderboardEntry {
   weekly_xp: number;
 }
 
+export interface GlobalLeagueEntry {
+  league_id: string;
+  name: string;
+  emoji: string;
+  member_count: number;
+  total_weekly_xp: number;
+}
+
+export interface WeeklyLeagueResult {
+  id: string;
+  week_start: string;
+  week_end: string;
+  winning_league_id: string | null;
+  winning_league_name: string;
+  winning_league_emoji: string;
+  winning_league_total_xp: number;
+  league_rankings: Array<{
+    league_id: string;
+    name: string;
+    emoji: string;
+    member_count: number;
+    total_weekly_xp: number;
+  }>;
+  winning_members: Array<{
+    user_id: string;
+    display_name: string;
+    avatar_emoji: string;
+    weekly_xp: number;
+  }>;
+  created_at: string;
+}
+
+export interface ChampionNote {
+  id: string;
+  weekly_result_id: string;
+  user_id: string;
+  display_name: string;
+  avatar_emoji: string;
+  note: string;
+  created_at: string;
+}
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  category: 'functional' | 'title' | 'border' | 'fun';
+  price: number;
+  emoji: string;
+  is_repeatable: boolean;
+  is_active: boolean;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface ShopPurchase {
+  id: string;
+  user_id: string;
+  item_id: string;
+  credits_spent: number;
+  created_at: string;
+}
+
 // Supabase Database type helper
 export interface Database {
   public: {

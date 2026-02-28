@@ -271,10 +271,19 @@ export const ANIMATION = {
 
 // Credits economy
 export const CREDITS = {
-  XP_PER_CREDIT: 10,        // 10 XP = 1 credit
-  MIN_CONVERT_XP: 100,      // Minimum 100 XP to convert (get 10 credits)
-  BUDDY_MATCH_COST: 5,      // 5 credits to find buddy without session
+  XP_PER_CREDIT: 50,         // 50 XP = 1 credit
+  MIN_CONVERT_XP: 250,       // Minimum 250 XP to convert (get 5 credits)
+  WEEKLY_CONVERT_CAP: 20,    // Max 20 credits per week from conversion
+  BUDDY_MATCH_COST: 5,       // 5 credits to find buddy without session
+  CONVERT_PRESETS: [
+    { xp: 250, credits: 5 },
+    { xp: 500, credits: 10 },
+    { xp: 1000, credits: 20 },
+  ],
 } as const;
+
+// Champion's Wall
+export const MAX_CHAMPION_NOTE_LENGTH = 200;
 
 // Leagues
 export const MAX_LEAGUE_NAME_LENGTH = 30;

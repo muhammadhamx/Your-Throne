@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Session, Profile, ChatRoom, Message, BuddyMatch, League, LeagueLeaderboardEntry } from '@/types/database';
+import type { Session, Profile, ChatRoom, Message, BuddyMatch, League, LeagueLeaderboardEntry, GlobalLeagueEntry, WeeklyLeagueResult, ChampionNote, ShopItem, ShopPurchase } from '@/types/database';
 
 // ============ SESSIONS ============
 
@@ -490,4 +490,108 @@ export async function getLeagueMemberCount(
     .eq('league_id', leagueId);
   if (error) throw error;
   return count ?? 0;
+}
+
+// ============ GLOBAL LEAGUE LEADERBOARD ============
+
+export async function getGlobalLeagueLeaderboard(): Promise<GlobalLeagueEntry[]> {
+  const { data, error } = await supabase.rpc('get_global_league_leaderboard');
+  if (error) throw error;
+  return (data ?? []) as GlobalLeagueEntry[];
+}
+
+// ============ WEEKLY RESULTS ============
+
+export async function getLatestWeeklyResult(): Promise<WeeklyLeagueResult | null> {
+  const { data, error } = await supabase.rpc('get_latest_weekly_result');
+  if (error) throw error;
+  const rows = data as WeeklyLeagueResult[] | null;
+  return rows && rows.length > 0 ? rows[0] : null;
+}
+
+export async function getChampionNotes(weeklyResultId: string): Promise<ChampionNote[]> {
+  const { data, error } = await supabase
+    .from('champion_notes')
+    .select('*')
+    .eq('weekly_result_id', weeklyResultId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ChampionNote[];
+}
+
+export async function submitChampionNote(userId: string, note: string): Promise<void> {
+  const { data, error } = await supabase.rpc('submit_champion_note', {
+    p_user_id: userId,
+    p_note: note,
+  });
+  if (error) throw error;
+}
+
+// ============ SHOP ============
+
+export async function getShopItems(): Promise<ShopItem[]> {
+  const { data, error } = await supabase
+    .from('shop_items')
+    .select('*')
+    .eq('is_active', true)
+    .order('price', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ShopItem[];
+}
+
+export async function getUserShopPurchases(userId: string): Promise<ShopPurchase[]> {
+  const { data, error } = await supabase
+    .from('shop_purchases')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ShopPurchase[];
+}
+
+export async function getOwnedShopItems(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('owned_shop_items')
+    .eq('id', userId)
+    .single();
+  if (error) return [];
+  return (data?.owned_shop_items as string[]) ?? [];
+}
+
+export async function purchaseShopItem(
+  userId: string,
+  itemId: string
+): Promise<{ creditsRemaining: number }> {
+  const { data, error } = await supabase.rpc('purchase_shop_item', {
+    p_user_id: userId,
+    p_item_id: itemId,
+  });
+  if (error) throw error;
+  const result = data as { status: string; credits_remaining: number };
+  return { creditsRemaining: result.credits_remaining };
+}
+
+// ============ WEEKLY CREDITS CAP ============
+
+export async function getWeeklyCreditsConverted(userId: string): Promise<number> {
+  const weekStart = getWeekStartISO();
+  const { data, error } = await supabase
+    .from('credit_transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('reason', 'xp_convert')
+    .gte('created_at', weekStart);
+  if (error) return 0;
+  return (data ?? []).reduce((sum, t) => sum + (t.amount ?? 0), 0);
+}
+
+function getWeekStartISO(): string {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const diff = day === 0 ? 6 : day - 1; // Monday = 0
+  const monday = new Date(now);
+  monday.setUTCDate(now.getUTCDate() - diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday.toISOString();
 }

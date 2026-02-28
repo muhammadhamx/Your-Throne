@@ -5,12 +5,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
+import { useLeagueStore } from '@/stores/leagueStore';
 import { getMyLeagues, getLeagueLeaderboard } from '@/lib/database';
 import type { League, LeagueLeaderboardEntry } from '@/types/database';
 import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
 export function LeagueRankCard() {
   const userId = useAuthStore((s) => s.user?.id);
+  const { globalLeaderboard, loadGlobalLeaderboard } = useLeagueStore();
   const [league, setLeague] = useState<League | null>(null);
   const [rank, setRank] = useState<number | null>(null);
   const [memberCount, setMemberCount] = useState(0);
@@ -35,6 +37,9 @@ export function LeagueRankCard() {
       setMemberCount(lb.length);
       setRank(myIndex >= 0 ? myIndex + 1 : null);
       setWeeklyXP(myIndex >= 0 ? lb[myIndex].weekly_xp : 0);
+
+      // Load global leaderboard for global rank context
+      if (globalLeaderboard.length === 0) loadGlobalLeaderboard();
     } catch {
       // Silent fail
     } finally {
@@ -82,6 +87,10 @@ export function LeagueRankCard() {
     return `#${rank}`;
   };
 
+  const globalRank = league
+    ? globalLeaderboard.findIndex((e) => e.league_id === league.id) + 1
+    : 0;
+
   return (
     <Animated.View entering={FadeInDown.delay(250).springify().damping(18)}>
       <TouchableOpacity
@@ -112,10 +121,16 @@ export function LeagueRankCard() {
           )}
         </View>
 
-        {weeklyXP > 0 && (
+        {(weeklyXP > 0 || globalRank > 0) && (
           <View style={styles.xpRow}>
             <Ionicons name="star" size={12} color={COLORS.accentWarm} />
             <Text style={styles.xpText}>{weeklyXP.toLocaleString()} XP this week</Text>
+            {globalRank > 0 && (
+              <View style={styles.globalRankPill}>
+                <Ionicons name="globe-outline" size={10} color={COLORS.accentWarm} />
+                <Text style={styles.globalRankText}>#{globalRank}</Text>
+              </View>
+            )}
             <View style={styles.viewLeaguePill}>
               <Text style={styles.viewLeagueText}>View</Text>
               <Ionicons name="chevron-forward" size={10} color={COLORS.textTertiary} />
@@ -207,6 +222,20 @@ const styles = StyleSheet.create({
     color: COLORS.accentWarm,
     fontWeight: '600',
     flex: 1,
+  },
+  globalRankPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: COLORS.accentWarm + '15',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+  },
+  globalRankText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.accentWarm,
   },
   viewLeaguePill: {
     flexDirection: 'row',

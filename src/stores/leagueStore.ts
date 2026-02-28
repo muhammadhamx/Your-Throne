@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { League, LeagueLeaderboardEntry } from '@/types/database';
+import type { League, LeagueLeaderboardEntry, GlobalLeagueEntry } from '@/types/database';
 import {
   createLeague,
   joinLeagueByCode,
@@ -8,12 +8,14 @@ import {
   getMyLeagues,
   getLeagueById,
   getLeagueLeaderboard,
+  getGlobalLeagueLeaderboard,
 } from '@/lib/database';
 
 interface LeagueState {
   leagues: League[];
   currentLeague: League | null;
   leaderboard: LeagueLeaderboardEntry[];
+  globalLeaderboard: GlobalLeagueEntry[];
   isLoading: boolean;
   error: string | null;
 
@@ -24,6 +26,7 @@ interface LeagueState {
   remove: (leagueId: string) => Promise<void>;
   loadLeague: (leagueId: string) => Promise<void>;
   loadLeaderboard: (leagueId: string) => Promise<void>;
+  loadGlobalLeaderboard: () => Promise<void>;
   setCurrentLeague: (league: League | null) => void;
   clearError: () => void;
 }
@@ -32,6 +35,7 @@ export const useLeagueStore = create<LeagueState>((set, get) => ({
   leagues: [],
   currentLeague: null,
   leaderboard: [],
+  globalLeaderboard: [],
   isLoading: false,
   error: null,
 
@@ -116,6 +120,16 @@ export const useLeagueStore = create<LeagueState>((set, get) => ({
       set({ leaderboard, isLoading: false });
     } catch {
       set({ error: 'Failed to load leaderboard', isLoading: false });
+    }
+  },
+
+  loadGlobalLeaderboard: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const globalLeaderboard = await getGlobalLeagueLeaderboard();
+      set({ globalLeaderboard, isLoading: false });
+    } catch {
+      set({ error: 'Failed to load global rankings', isLoading: false });
     }
   },
 

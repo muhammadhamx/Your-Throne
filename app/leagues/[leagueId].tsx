@@ -19,6 +19,46 @@ import { useLeagueStore } from '@/stores/leagueStore';
 import type { LeagueLeaderboardEntry } from '@/types/database';
 import { COLORS, GRADIENTS, SHADOWS, SPACING, RADIUS } from '@/utils/constants';
 
+function GlobalRankBadge({ leagueId }: { leagueId: string }) {
+  const { globalLeaderboard, loadGlobalLeaderboard } = useLeagueStore();
+
+  useEffect(() => {
+    if (globalLeaderboard.length === 0) loadGlobalLeaderboard();
+  }, [globalLeaderboard.length, loadGlobalLeaderboard]);
+
+  const rank = globalLeaderboard.findIndex((e) => e.league_id === leagueId) + 1;
+  if (rank === 0) return null;
+
+  return (
+    <View style={globalRankStyles.badge}>
+      <Ionicons name="globe-outline" size={12} color={COLORS.accentWarm} />
+      <Text style={globalRankStyles.text}>
+        #{rank} of {globalLeaderboard.length} globally
+      </Text>
+    </View>
+  );
+}
+
+const globalRankStyles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.accentWarm + '15',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.accentWarm + '30',
+    marginTop: SPACING.sm,
+  },
+  text: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.accentWarm,
+  },
+});
+
 function LeaderboardRow({
   entry,
   index,
@@ -191,6 +231,9 @@ export default function LeagueDetailScreen() {
         {currentLeague.description && (
           <Text style={styles.headerDesc}>{currentLeague.description}</Text>
         )}
+
+        {/* Global rank */}
+        <GlobalRankBadge leagueId={leagueId!} />
 
         {/* Join Code */}
         <TouchableOpacity style={styles.codeRow} onPress={handleCopyCode} activeOpacity={0.7}>

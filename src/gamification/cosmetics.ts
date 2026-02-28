@@ -137,6 +137,39 @@ export const THRONE_TITLES: ThroneTitle[] = [
     unlockCondition: 'Reach a 30-day streak',
     check: (ctx) => ctx.currentStreak >= 30,
   },
+  // Purchasable titles (unlocked via shop)
+  {
+    id: 'throne_lord',
+    name: 'Throne Lord',
+    description: 'Ruler of the porcelain kingdom',
+    emoji: '🏰',
+    unlockCondition: 'Purchase from Reward Shop',
+    check: () => false, // Unlocked via shop purchase, not gameplay
+  },
+  {
+    id: 'golden_cheeks',
+    name: 'Golden Cheeks',
+    description: 'Sits on gold, lives on gold',
+    emoji: '✨',
+    unlockCondition: 'Purchase from Reward Shop',
+    check: () => false,
+  },
+  {
+    id: 'phantom_pooper',
+    name: 'Phantom Pooper',
+    description: 'Was here, left no trace',
+    emoji: '👻',
+    unlockCondition: 'Purchase from Reward Shop',
+    check: () => false,
+  },
+  {
+    id: 'royal_flush_vip',
+    name: 'Royal Flush VIP',
+    description: 'Exclusive access to the throne room',
+    emoji: '💎',
+    unlockCondition: 'Purchase from Reward Shop',
+    check: () => false,
+  },
 ];
 
 /** Rank-gated avatar emojis — [rankId, emoji] */

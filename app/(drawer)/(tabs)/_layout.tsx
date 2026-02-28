@@ -23,7 +23,7 @@ interface TabMeta {
 }
 
 const TAB_META: Record<string, TabMeta> = {
-  session: { label: 'Throne', icon: 'home-outline', iconFocused: 'home' },
+  session: { label: 'Royal Throne', icon: 'home-outline', iconFocused: 'home' },
   stats: { label: 'Stats', icon: 'stats-chart-outline', iconFocused: 'stats-chart' },
   predict: { label: 'Predict', icon: 'sparkles-outline', iconFocused: 'sparkles' },
   chat: { label: 'Chat', icon: 'chatbubble-ellipses-outline', iconFocused: 'chatbubble-ellipses' },
@@ -200,7 +200,7 @@ export default function TabsLayout() {
         ),
       }}
     >
-      <Tabs.Screen key="session" name="session" options={{ title: 'Throne' }} />
+      <Tabs.Screen key="session" name="session" options={{ title: 'Royal Throne' }} />
       <Tabs.Screen key="stats" name="stats" options={{ title: 'Stats' }} />
       <Tabs.Screen key="predict" name="predict" options={{ title: 'Predict' }} />
       <Tabs.Screen key="chat" name="chat" options={{ title: 'Chat' }} />

@@ -22,8 +22,11 @@ import { StillPoopingPopup } from '@/components/session/StillPoopingPopup';
 import { SessionStartPopup } from '@/components/session/SessionStartPopup';
 import { PostSessionSummary } from '@/components/session/PostSessionSummary';
 import { GreetingBanner } from '@/components/home/GreetingBanner';
+import { ChampionsWallCard } from '@/components/home/ChampionsWallCard';
 import { StreakCard } from '@/components/home/StreakCard';
 import { DailyChallengesCard } from '@/components/home/DailyChallengesCard';
+import { VictoryDialog } from '@/components/leagues/VictoryDialog';
+import { useWeeklyResultStore } from '@/stores/weeklyResultStore';
 import { getRandomItem, EMPTY_STATE_MESSAGES } from '@/humor/jokes';
 import { COLORS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
 import type { Session } from '@/types/database';
@@ -35,6 +38,7 @@ const StaticCards = memo(function StaticCards() {
   return (
     <>
       <GreetingBanner />
+      <ChampionsWallCard />
       <StreakCard />
       <DailyChallengesCard />
     </>
@@ -116,6 +120,8 @@ export default function SessionScreen() {
   const user = useAuthStore((s) => s.user);
   const { initialize: initGamification, isLoaded: gamificationLoaded, rank, streak } = useGamificationStore();
   const { fire: fireConfetti } = useConfetti();
+  const { isWinningMember, hasPostedNote, latestResult, loadLatestResult } = useWeeklyResultStore();
+  const [showVictoryDialog, setShowVictoryDialog] = useState(false);
   const [showQuickLog, setShowQuickLog] = useState(false);
   const [showAllSessions, setShowAllSessions] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +139,19 @@ export default function SessionScreen() {
       initGamification();
     }
   }, [gamificationLoaded, initGamification]);
+
+  // Load weekly result and show victory dialog if user is a winner
+  useEffect(() => {
+    if (user?.id) {
+      loadLatestResult(user.id);
+    }
+  }, [user?.id, loadLatestResult]);
+
+  useEffect(() => {
+    if (isWinningMember && !hasPostedNote && latestResult) {
+      setShowVictoryDialog(true);
+    }
+  }, [isWinningMember, hasPostedNote, latestResult]);
 
   useEffect(() => {
     if (!gamificationLoaded) return;
@@ -225,6 +244,16 @@ export default function SessionScreen() {
     <View style={styles.container}>
       <StillPoopingPopup />
       <SessionStartPopup isActive={isActive} />
+
+      {/* Victory Dialog for winning league members */}
+      {user?.id && latestResult && (
+        <VictoryDialog
+          visible={showVictoryDialog}
+          userId={user.id}
+          leagueEmoji={latestResult.winning_league_emoji}
+          onDismiss={() => setShowVictoryDialog(false)}
+        />
+      )}
 
       {summaryData && (
         <PostSessionSummary

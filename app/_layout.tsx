@@ -167,6 +167,14 @@ export default function RootLayout() {
             options={{ title: 'Join League', presentation: 'card' }}
           />
           <Stack.Screen
+            name="leagues/global"
+            options={{ title: 'Global Rankings', presentation: 'card' }}
+          />
+          <Stack.Screen
+            name="shop/index"
+            options={{ title: 'Reward Shop', presentation: 'card' }}
+          />
+          <Stack.Screen
             name="about"
             options={{ title: 'About Royal Throne', presentation: 'card' }}
           />
