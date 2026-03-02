@@ -305,5 +305,5 @@ export const SUPPORT_LINKS = {
     ETH: '0xaef033cacc91bb36db05ee561d4d98bb0ae968ba',
     USDT_TRC20: '0xaef033cacc91bb36db05ee561d4d98bb0ae968ba',
   },
-  SHARE_TEXT: '👑 Check out Royal Throne — the funniest poop tracker app! Track sessions, compete in leagues, and find poop buddies.\n\nDownload: https://github.com/muhammadhamx/Your-Throne/releases',
+  SHARE_TEXT: '👑 Check out Royal Throne — the funniest poop tracker app! Track sessions, compete in leagues, and find poop buddies.\n\nDownload: https://muhammadhamx.github.io/Your-Throne/',
 } as const;
