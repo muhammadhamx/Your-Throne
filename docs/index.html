@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Royal Throne — Your Porcelain Kingdom Awaits</title>
+  <meta name="description" content="The funniest poop tracker app. Track sessions, compete in leagues, find poop buddies, and earn XP for doing what you were going to do anyway.">
+  <meta name="theme-color" content="#080C14">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Royal Throne — Your Porcelain Kingdom Awaits">
+  <meta property="og:description" content="The funniest poop tracker app. Track sessions, compete in leagues, find poop buddies, and earn XP.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://muhammadhamx.github.io/Your-Throne/">
+  <meta property="og:image" content="https://muhammadhamx.github.io/Your-Throne/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Royal Throne — Your Porcelain Kingdom Awaits">
+  <meta name="twitter:description" content="The funniest poop tracker app. Track sessions, compete in leagues, find poop buddies.">
+
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #080C14;
+      --surface: #111828;
+      --surface-raised: #172031;
+      --surface-elevated: #1E2B40;
+      --border: #192436;
+      --border-light: #1E2E45;
+      --text: #F0F6FF;
+      --text-secondary: #8EA0B8;
+      --text-tertiary: #4E6380;
+      --accent: #00D4A0;
+      --accent-light: #5EEFC8;
+      --accent-warm: #F5A623;
+      --primary: #1A3A5C;
+      --primary-dark: #0D1F35;
+      --error: #F87171;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-full: 9999px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ─── Navbar ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(8,12,20,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .nav-brand-icon { font-size: 28px; }
+    .nav-brand-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta {
+      background: var(--accent) !important;
+      color: var(--primary-dark) !important;
+      padding: 8px 20px;
+      border-radius: var(--radius-full);
+      font-weight: 800 !important;
+      font-size: 13px !important;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,160,0.3); }
+
+    /* ─── Hero ─── */
+    .hero {
+      padding: 140px 24px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(0,212,160,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 30px;
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      background: linear-gradient(135deg, var(--accent), #00B589);
+      box-shadow: 0 0 60px rgba(0,212,160,0.3), 0 20px 40px rgba(0,0,0,0.4);
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: var(--radius-full);
+      font-size: 16px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #00B589);
+      color: var(--primary-dark);
+      box-shadow: 0 4px 24px rgba(0,212,160,0.3);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 32px rgba(0,212,160,0.4); }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border-light);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-warm {
+      background: linear-gradient(135deg, var(--accent-warm), #E8940A);
+      color: var(--primary-dark);
+      box-shadow: 0 4px 24px rgba(245,166,35,0.3);
+    }
+    .btn-warm:hover { box-shadow: 0 8px 32px rgba(245,166,35,0.4); }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      margin-top: 56px;
+      flex-wrap: wrap;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-value { font-size: 32px; font-weight: 900; color: var(--accent); }
+    .hero-stat-label { font-size: 13px; color: var(--text-tertiary); font-weight: 600; margin-top: 4px; }
+
+    /* ─── Section ─── */
+    section { padding: 80px 24px; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--text-secondary);
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 48px;
+    }
+
+    /* ─── Features Grid ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+      background: var(--surface-elevated);
+    }
+    .feature-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.3px;
+    }
+    .feature-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ─── How It Works ─── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 32px;
+      counter-reset: step;
+    }
+    .step {
+      text-align: center;
+      position: relative;
+    }
+    .step-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #00B589);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--primary-dark);
+      margin: 0 auto 16px;
+      box-shadow: 0 0 30px rgba(0,212,160,0.2);
+    }
+    .step-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .step-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ─── Promises ─── */
+    .promises-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .promise-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .promise-emoji { font-size: 28px; flex-shrink: 0; }
+    .promise-title { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+    .promise-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ─── Support ─── */
+    .support-section {
+      background: linear-gradient(180deg, transparent, rgba(245,166,35,0.03), transparent);
+    }
+    .support-card {
+      max-width: 640px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+    }
+    .support-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FF6B35, var(--accent-warm));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 40px rgba(245,166,35,0.2);
+    }
+    .support-title { font-size: 24px; font-weight: 900; margin-bottom: 12px; }
+    .support-text {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 28px;
+    }
+    .support-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .crypto-addresses {
+      display: none;
+      margin-top: 20px;
+      text-align: left;
+      width: 100%;
+    }
+    .crypto-addresses.show { display: block; }
+    .crypto-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 8px;
+    }
+    .crypto-label { font-size: 13px; font-weight: 800; color: var(--accent-warm); }
+    .crypto-addr {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: monospace;
+      word-break: break-all;
+      flex: 1;
+      margin: 0 12px;
+    }
+    .crypto-copy {
+      background: var(--accent-warm);
+      color: var(--primary-dark);
+      border: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .crypto-copy:hover { transform: scale(1.05); }
+
+    /* ─── Footer ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer-inner { max-width: 1100px; margin: 0 auto; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+    .footer-links a {
+      color: var(--text-tertiary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-copy { font-size: 13px; color: var(--text-tertiary); }
+    .footer-tagline { font-size: 12px; color: var(--text-tertiary); margin-top: 8px; font-style: italic; }
+
+    /* ─── Mobile hamburger ─── */
+    .nav-toggle { display: none; background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: rgba(8,12,20,0.97);
+        backdrop-filter: blur(20px);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        gap: 16px;
+      }
+      .nav-toggle { display: block; }
+      .hero { padding: 120px 20px 60px; }
+      .hero-stats { gap: 24px; }
+      .hero-stat-value { font-size: 24px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .support-card { padding: 28px 20px; }
+      .crypto-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .crypto-addr { margin: 0; }
+    }
+
+    /* ─── Animations ─── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <span class="nav-brand-icon">👑</span>
+        <span class="nav-brand-text">Royal Throne</span>
+      </a>
+      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#promises">Promises</a>
+        <a href="#support">Support</a>
+        <a href="https://github.com/muhammadhamx/Your-Throne" target="_blank" rel="noopener">GitHub</a>
+        <a href="#download" class="nav-cta">Download APK</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-icon">👑</div>
+    <h1>Your Porcelain<br><span class="gradient-text">Kingdom Awaits</span></h1>
+    <p class="hero-sub">
+      The funniest poop tracker ever made. Track sessions, compete in leagues, find poop buddies, and earn XP for doing what you were going to do anyway.
+    </p>
+    <div class="hero-buttons" id="download">
+      <a href="https://github.com/muhammadhamx/Your-Throne/releases" target="_blank" rel="noopener" class="btn btn-primary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Android
+      </a>
+      <a href="https://github.com/muhammadhamx/Your-Throne" target="_blank" rel="noopener" class="btn btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View Source
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">100%</div>
+        <div class="hero-stat-label">Free & Open Source</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">0</div>
+        <div class="hero-stat-label">Data Sold</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">&#x221E;</div>
+        <div class="hero-stat-label">Bathroom Fun</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything You Need on the Throne</h2>
+      <p class="section-sub">Built for the most important room in your house.</p>
+
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#9201;</div>
+          <h3 class="feature-title">Session Tracking</h3>
+          <p class="feature-desc">One tap to start, one tap to stop. Rate your session, add notes, and build a history of your royal performances.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#128200;</div>
+          <h3 class="feature-title">Stats & Insights</h3>
+          <p class="feature-desc">Weekly recaps, streaks, averages, and patterns. See when you go, how long, and how your habits compare over time.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#127942;</div>
+          <h3 class="feature-title">Leagues & Leaderboards</h3>
+          <p class="feature-desc">Create or join leagues, compete with friends, climb the ranks. Because everything is better as a competition.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#129309;</div>
+          <h3 class="feature-title">Poop Buddies</h3>
+          <p class="feature-desc">Get matched with someone pooping at the same time. Chat in real-time. Because nobody should poop alone.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#11088;</div>
+          <h3 class="feature-title">XP & Achievements</h3>
+          <p class="feature-desc">Earn XP for every session, unlock achievements, rank up from Toilet Trainee to Porcelain Emperor. Yes, really.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#128302;</div>
+          <h3 class="feature-title">Smart Predictions</h3>
+          <p class="feature-desc">ML-powered predictions learn your patterns and notify you before nature calls. The future is now.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" style="background: linear-gradient(180deg, transparent, rgba(0,212,160,0.02), transparent);">
+    <div class="section-inner">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">Three Taps to Glory</h2>
+      <p class="section-sub">No sign-up forms. No email required. Just open and go.</p>
+
+      <div class="steps">
+        <div class="step fade-in">
+          <div class="step-number">1</div>
+          <h3 class="step-title">Download & Open</h3>
+          <p class="step-desc">Install the APK and open the app. An anonymous account is created automatically. That's it.</p>
+        </div>
+        <div class="step fade-in">
+          <div class="step-number">2</div>
+          <h3 class="step-title">Start a Session</h3>
+          <p class="step-desc">Hit the big button when you sit down. Hit it again when you're done. Rate and add notes if you want.</p>
+        </div>
+        <div class="step fade-in">
+          <div class="step-number">3</div>
+          <h3 class="step-title">Compete & Connect</h3>
+          <p class="step-desc">Join leagues, find poop buddies, earn XP, unlock achievements, and climb the leaderboard.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Promises -->
+  <section id="promises">
+    <div class="section-inner">
+      <div class="section-label">Our Promises</div>
+      <h2 class="section-title">Your Privacy, Our Priority</h2>
+      <p class="section-sub">We built this app for fun, not profit. Here's what we guarantee.</p>
+
+      <div class="promises-grid">
+        <div class="promise-card fade-in">
+          <span class="promise-emoji">&#128683;</span>
+          <div>
+            <h3 class="promise-title">No Data Collection</h3>
+            <p class="promise-desc">We don't track you, profile you, or harvest your data. Your poop schedule is YOUR business.</p>
+          </div>
+        </div>
+        <div class="promise-card fade-in">
+          <span class="promise-emoji">&#128274;</span>
+          <div>
+            <h3 class="promise-title">Anonymous by Default</h3>
+            <p class="promise-desc">No email required. No sign-up forms. You get an anonymous account the moment you open the app.</p>
+          </div>
+        </div>
+        <div class="promise-card fade-in">
+          <span class="promise-emoji">&#128465;&#65039;</span>
+          <div>
+            <h3 class="promise-title">Delete Everything, Anytime</h3>
+            <p class="promise-desc">Hit delete in Settings and every byte of your data vanishes from our servers. No retention tricks.</p>
+          </div>
+        </div>
+        <div class="promise-card fade-in">
+          <span class="promise-emoji">&#129335;</span>
+          <div>
+            <h3 class="promise-title">We Don't Even Want Your Data</h3>
+            <p class="promise-desc">Seriously. We built this because tracking poops is surprisingly satisfying. That's the whole reason.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Support -->
+  <section id="support" class="support-section">
+    <div class="section-inner">
+      <div class="section-label">Support</div>
+      <h2 class="section-title">Help Keep the Throne Alive</h2>
+      <p class="section-sub">This app is built by one broke developer from Pakistan with zero budget. Your support means the world.</p>
+
+      <div class="support-card fade-in">
+        <div class="support-icon">&#10084;&#65039;</div>
+        <h3 class="support-title">This Dev is Broke &#128557;</h3>
+        <p class="support-text">
+          Real talk — the developer behind Royal Throne is so broke, he can't even afford to put this app on the Play Store ($25 feels like $25,000 right now). Your support could literally get this app into the hands of millions... or at least help him afford lunch.
+        </p>
+
+        <div class="support-buttons">
+          <button class="btn btn-warm" onclick="toggleCrypto()">
+            &#8383; Donate via Crypto
+          </button>
+          <a href="https://github.com/muhammadhamx/Your-Throne" target="_blank" rel="noopener" class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Star on GitHub
+          </a>
+        </div>
+
+        <div class="crypto-addresses" id="crypto-panel">
+          <div class="crypto-row">
+            <span class="crypto-label">BTC</span>
+            <span class="crypto-addr" id="btc-addr">bc1qh5q839cvl05y7td6xvkuzs8g4wra7qu986jfja</span>
+            <button class="crypto-copy" onclick="copyAddr('btc-addr')">Copy</button>
+          </div>
+          <div class="crypto-row">
+            <span class="crypto-label">ETH</span>
+            <span class="crypto-addr" id="eth-addr">0xaef033cacc91bb36db05ee561d4d98bb0ae968ba</span>
+            <button class="crypto-copy" onclick="copyAddr('eth-addr')">Copy</button>
+          </div>
+          <div class="crypto-row">
+            <span class="crypto-label">USDT (TRC20)</span>
+            <span class="crypto-addr" id="usdt-addr">0xaef033cacc91bb36db05ee561d4d98bb0ae968ba</span>
+            <button class="crypto-copy" onclick="copyAddr('usdt-addr')">Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download CTA -->
+  <section style="padding: 60px 24px; text-align: center;">
+    <div class="section-inner">
+      <h2 class="section-title">Ready to Rule the Throne?</h2>
+      <p class="section-sub" style="margin-bottom: 32px;">Download now and start tracking your royal sessions.</p>
+      <a href="https://github.com/muhammadhamx/Your-Throne/releases" target="_blank" rel="noopener" class="btn btn-primary" style="font-size: 18px; padding: 16px 40px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download for Android
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-links">
+        <a href="https://github.com/muhammadhamx/Your-Throne" target="_blank" rel="noopener">GitHub</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="mailto:royalthroneapp@gmail.com">Contact</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Royal Throne. Open source, open hearts.</p>
+      <p class="footer-tagline">Built with love (and fiber).</p>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Crypto toggle
+    function toggleCrypto() {
+      document.getElementById('crypto-panel').classList.toggle('show');
+    }
+
+    // Copy address
+    function copyAddr(id) {
+      const addr = document.getElementById(id).textContent;
+      navigator.clipboard.writeText(addr).then(() => {
+        const btn = document.getElementById(id).nextElementSibling;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+
+    // Close mobile nav on link click
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      a.addEventListener('click', () => {
+        document.querySelector('.nav-links').classList.remove('open');
+      });
+    });
+  </script>
+</body>
+</html>
