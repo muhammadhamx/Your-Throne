@@ -1,9 +1,10 @@
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Share, Alert, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
-import { COLORS, GRADIENTS, RADIUS, SPACING, SHADOWS } from '@/utils/constants';
+import * as Clipboard from 'expo-clipboard';
+import { COLORS, GRADIENTS, RADIUS, SPACING, SHADOWS, SUPPORT_LINKS } from '@/utils/constants';
 
 const PROMISES = [
   {
@@ -44,6 +45,43 @@ const FUN_FACTS = [
 export default function AboutScreen() {
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
   const randomFact = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+
+  const handleCryptoDonate = () => {
+    Alert.alert(
+      '₿ Donate via Crypto',
+      'Choose a cryptocurrency to copy the wallet address:',
+      [
+        {
+          text: 'BTC (Bitcoin)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.BTC);
+            Alert.alert('Copied!', 'BTC address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        {
+          text: 'ETH (Ethereum)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.ETH);
+            Alert.alert('Copied!', 'ETH address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        {
+          text: 'USDT (TRC20)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.USDT_TRC20);
+            Alert.alert('Copied!', 'USDT TRC20 address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({ message: SUPPORT_LINKS.SHARE_TEXT });
+    } catch {}
+  };
 
   return (
     <ScrollView
@@ -89,6 +127,48 @@ export default function AboutScreen() {
           </View>
         </View>
       ))}
+
+      {/* Support */}
+      <Text style={styles.sectionLabel}>SUPPORT THE DEVELOPER</Text>
+      <View style={styles.supportCard}>
+        <View style={styles.supportHeader}>
+          <LinearGradient
+            colors={GRADIENTS.fire}
+            style={styles.supportIconCircle}
+          >
+            <Text style={styles.supportIconText}>❤️</Text>
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.supportTitle}>This Dev is Broke 😭</Text>
+            <Text style={styles.supportSub}>Your support keeps this app alive!</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.supportCryptoBtn}
+          onPress={handleCryptoDonate}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={GRADIENTS.buttonWarm}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.supportCryptoBtnInner}
+          >
+            <Text style={styles.supportCryptoBtnIcon}>₿</Text>
+            <Text style={styles.supportCryptoBtnText}>Donate via Crypto</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.supportOutlineBtn}
+          onPress={handleShare}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="share-social-outline" size={16} color={COLORS.accent} />
+          <Text style={styles.supportOutlineBtnText}>Share with Friends</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Fun fact */}
       <View style={styles.factCard}>
@@ -253,6 +333,81 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     lineHeight: 20,
+  },
+
+  // Support
+  supportCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: SPACING.md,
+    ...SHADOWS.subtle,
+  },
+  supportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  supportIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  supportIconText: {
+    fontSize: 20,
+  },
+  supportTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  supportSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  supportCryptoBtn: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    marginBottom: SPACING.xs,
+  },
+  supportCryptoBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 11,
+    gap: 8,
+  },
+  supportCryptoBtnIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: COLORS.primaryDark,
+  },
+  supportCryptoBtnText: {
+    color: COLORS.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  supportOutlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surfaceElevated,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  supportOutlineBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.text,
   },
 
   // Fun fact

@@ -35,6 +35,7 @@ export function CustomDrawerContent(props: DrawerContentComponentProps) {
     { icon: 'calendar-outline', label: 'Weekly Recap', route: '/(drawer)/(tabs)/stats' },
     { icon: 'diamond-outline', label: 'Credits Wallet', route: '/credits', badge: credits || undefined },
     { icon: 'cart-outline', label: 'Reward Shop', route: '/shop/' },
+    { icon: 'heart-outline', label: 'Support Us', route: '/settings' },
     { icon: 'settings-outline', label: 'Settings', route: '/settings' },
     { icon: 'information-circle-outline', label: 'About', route: '/about' },
     { icon: 'chatbubble-outline', label: 'Contact Us', route: '/contact' },

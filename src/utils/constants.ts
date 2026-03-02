@@ -296,3 +296,14 @@ export const FONTS = {
   medium: 'System',
   bold: 'System',
 } as const;
+
+// Support / Donation
+export const SUPPORT_LINKS = {
+  GITHUB: 'https://github.com/muhammadhamx/Your-Throne',
+  CRYPTO: {
+    BTC: 'bc1qh5q839cvl05y7td6xvkuzs8g4wra7qu986jfja',
+    ETH: '0xaef033cacc91bb36db05ee561d4d98bb0ae968ba',
+    USDT_TRC20: '0xaef033cacc91bb36db05ee561d4d98bb0ae968ba',
+  },
+  SHARE_TEXT: '👑 Check out Royal Throne — the funniest poop tracker app! Track sessions, compete in leagues, and find poop buddies.\n\nDownload: https://github.com/muhammadhamx/Your-Throne/releases',
+} as const;

@@ -9,7 +9,10 @@ import {
   Alert,
   Switch,
   Pressable,
+  Share,
+  Linking,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,7 +39,7 @@ import {
 import { useSessionStore } from '@/stores/sessionStore';
 import { useCreditsStore } from '@/stores/creditsStore';
 import type { Profile } from '@/types/database';
-import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING } from '@/utils/constants';
+import { COLORS, GRADIENTS, SHADOWS, RADIUS, SPACING, SUPPORT_LINKS } from '@/utils/constants';
 import {
   scheduleSmartEngagementNotifications,
   cancelEngagementNotifications,
@@ -306,6 +309,43 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleCryptoDonate = () => {
+    Alert.alert(
+      '₿ Donate via Crypto',
+      'Choose a cryptocurrency to copy the wallet address:',
+      [
+        {
+          text: 'BTC (Bitcoin)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.BTC);
+            Alert.alert('Copied!', 'BTC address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        {
+          text: 'ETH (Ethereum)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.ETH);
+            Alert.alert('Copied!', 'ETH address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        {
+          text: 'USDT (TRC20)',
+          onPress: async () => {
+            await Clipboard.setStringAsync(SUPPORT_LINKS.CRYPTO.USDT_TRC20);
+            Alert.alert('Copied!', 'USDT TRC20 address copied to clipboard. Thank you! 🙏');
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({ message: SUPPORT_LINKS.SHARE_TEXT });
+    } catch {}
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -526,6 +566,59 @@ export default function SettingsScreen() {
             />
           }
         />
+      </Animated.View>
+
+      {/* ─── Support the Developer ─── */}
+      <SectionHeader title="Support the Developer" />
+      <Animated.View entering={FadeInDown.delay(275).duration(400).springify()} style={styles.card}>
+        <View style={styles.supportHeader}>
+          <LinearGradient
+            colors={GRADIENTS.fire}
+            style={styles.supportIconCircle}
+          >
+            <Text style={styles.supportIconText}>❤️</Text>
+          </LinearGradient>
+          <View style={styles.supportHeaderInfo}>
+            <Text style={styles.supportTitle}>This Dev is Broke 😭</Text>
+          </View>
+        </View>
+        <Text style={styles.supportBody}>
+          Real talk — the developer behind Royal Throne is so broke, he can't even afford to put this app on the Play Store ($25 feels like $25,000 right now).{'\n\n'}Your support could literally get this app into the hands of millions... or at least help him afford lunch. Every little bit helps.{'\n\n'}If this app has ever made your bathroom trip better, show some love!
+        </Text>
+
+        <TouchableOpacity
+          style={styles.cryptoBtn}
+          onPress={handleCryptoDonate}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={GRADIENTS.buttonWarm}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.cryptoBtnGradient}
+          >
+            <Text style={styles.cryptoBtnIcon}>₿</Text>
+            <Text style={styles.cryptoBtnText}>Donate via Crypto</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.supportOutlineBtn}
+          onPress={handleShare}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="share-social-outline" size={18} color={COLORS.accent} />
+          <Text style={styles.supportOutlineBtnText}>Share with Friends</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.supportOutlineBtn}
+          onPress={() => Linking.openURL(SUPPORT_LINKS.GITHUB)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="star-outline" size={18} color={COLORS.accentWarm} />
+          <Text style={styles.supportOutlineBtnText}>Star on GitHub</Text>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* ─── Account ─── */}
@@ -966,6 +1059,77 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textSecondary,
     marginTop: 2,
+  },
+
+  // Support
+  supportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
+  },
+  supportIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  supportIconText: {
+    fontSize: 22,
+  },
+  supportHeaderInfo: {
+    flex: 1,
+  },
+  supportTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  supportBody: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginBottom: SPACING.md,
+  },
+  cryptoBtn: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    marginBottom: SPACING.xs,
+  },
+  cryptoBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    gap: 8,
+  },
+  cryptoBtnIcon: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: COLORS.primaryDark,
+  },
+  cryptoBtnText: {
+    color: COLORS.primaryDark,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  supportOutlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.surfaceElevated,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    marginBottom: SPACING.xs,
+  },
+  supportOutlineBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
   },
 
   // Account
