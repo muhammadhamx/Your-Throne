@@ -51,7 +51,7 @@ The system: GitHub Actions runs daily at 7pm PKT, picks a post from 21 pre-writt
 
 ## Step 2: Add Secrets to GitHub (2 minutes)
 
-1. Go to: https://github.com/muhammadhamx/Your-Throne/settings/secrets/actions
+1. Go to: https://github.com/muhammadhamx/Royal-Throne/settings/secrets/actions
 2. Click **"New repository secret"** for each key
 3. Paste the name and value exactly
 
@@ -61,7 +61,7 @@ The system auto-detects which platforms have secrets. Missing = skipped silently
 
 ## Step 3: Test It (1 minute)
 
-1. Go to: https://github.com/muhammadhamx/Your-Throne/actions
+1. Go to: https://github.com/muhammadhamx/Royal-Throne/actions
 2. Click "Daily Social Media Marketing"
 3. Click "Run workflow" > "Run workflow"
 4. Check your social media accounts — posts should appear
@@ -86,7 +86,7 @@ Post to these subreddits (READ THEIR RULES FIRST):
 
 ### Hacker News
 Post: "Show HN: Royal Throne – Open source poop tracker with ML predictions and real-time buddy matching"
-URL: https://muhammadhamx.github.io/Your-Throne/
+URL: https://muhammadhamx.github.io/Royal-Throne/
 
 ### Product Hunt
 1. Go to https://producthunt.com and sign up (free)
