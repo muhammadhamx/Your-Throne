@@ -383,7 +383,7 @@ TEMPLATES = {
 }
 
 
-def generate_image(post, output_path="marketing/output.png"):
+def generate_image(post, output_path="marketing/output.jpg"):
     """Generate a branded marketing image from a post dict."""
     img = Image.new("RGB", (SIZE, SIZE), NAVY)
     draw = ImageDraw.Draw(img)
@@ -395,7 +395,8 @@ def generate_image(post, output_path="marketing/output.png"):
 
     # Ensure output directory exists
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-    img.save(output_path, "PNG", quality=95)
+    # Save as JPEG — Instagram only supports JPEG
+    img.save(output_path, "JPEG", quality=95)
     print(f"Image saved: {output_path} (template {template_num})")
     return output_path
 
@@ -406,7 +407,7 @@ def main():
         sys.exit(1)
 
     index = int(sys.argv[1])
-    output = sys.argv[2] if len(sys.argv) > 2 else "/tmp/marketing_image.png"
+    output = sys.argv[2] if len(sys.argv) > 2 else "/tmp/marketing_image.jpg"
 
     # Load posts
     script_dir = Path(__file__).parent

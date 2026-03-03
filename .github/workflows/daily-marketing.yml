@@ -60,9 +60,9 @@ jobs:
       - name: Generate marketing image
         run: |
           pip install Pillow -q
-          FONT_DIR=/tmp/fonts python3 marketing/generate_image.py ${{ steps.pick.outputs.index }} /tmp/marketing_image.png
+          FONT_DIR=/tmp/fonts python3 marketing/generate_image.py ${{ steps.pick.outputs.index }} /tmp/marketing_image.jpg
           echo "Image generated:"
-          ls -la /tmp/marketing_image.png
+          ls -la /tmp/marketing_image.jpg
 
       # ─── Twitter/X (DISABLED — requires $100/month paid API plan) ───
       # - name: Post to Twitter/X
@@ -125,7 +125,7 @@ jobs:
               post = text[:297] + "..."
 
           # Upload image
-          image_path = '/tmp/marketing_image.png'
+          image_path = '/tmp/marketing_image.jpg'
           if os.path.exists(image_path):
               with open(image_path, 'rb') as img_file:
                   img_data = img_file.read()
@@ -156,7 +156,7 @@ jobs:
           INSTANCE="${MASTODON_INSTANCE:-https://mastodon.social}"
 
           # Upload image first
-          IMAGE_PATH="/tmp/marketing_image.png"
+          IMAGE_PATH="/tmp/marketing_image.jpg"
           MEDIA_ID=""
           if [ -f "$IMAGE_PATH" ]; then
             MEDIA_RESPONSE=$(curl -s -X POST "${INSTANCE}/api/v2/media" \
@@ -196,17 +196,17 @@ jobs:
 
           $TAGS"
 
-          IMAGE_PATH="/tmp/marketing_image.png"
+          IMAGE_PATH="/tmp/marketing_image.jpg"
 
           if [ -f "$IMAGE_PATH" ]; then
             # Photo post (image + caption)
-            RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v19.0/${FACEBOOK_PAGE_ID}/photos" \
+            RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v21.0/${FACEBOOK_PAGE_ID}/photos" \
               -H "Authorization: Bearer ${FACEBOOK_PAGE_TOKEN}" \
               -F "source=@${IMAGE_PATH}" \
               -F "message=${FULL_POST}")
           else
             # Text-only fallback
-            RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v19.0/${FACEBOOK_PAGE_ID}/feed" \
+            RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v21.0/${FACEBOOK_PAGE_ID}/feed" \
               -H "Authorization: Bearer ${FACEBOOK_PAGE_TOKEN}" \
               -F "message=${FULL_POST}")
           fi
@@ -231,7 +231,7 @@ jobs:
 
           Link in bio!"
 
-          IMAGE_PATH="/tmp/marketing_image.png"
+          IMAGE_PATH="/tmp/marketing_image.jpg"
 
           if [ ! -f "$IMAGE_PATH" ]; then
             echo "No image found, skipping Instagram (requires image)"
@@ -256,8 +256,9 @@ jobs:
           echo "Image URL: $IMAGE_URL"
 
           # Step 1: Create media container
-          CREATE_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v19.0/${INSTAGRAM_ACCOUNT_ID}/media" \
-            -d "image_url=${IMAGE_URL}" \
+          CREATE_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v21.0/${INSTAGRAM_ACCOUNT_ID}/media" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "image_url=${IMAGE_URL}" \
             --data-urlencode "caption=${FULL_POST}" \
             -d "access_token=${FACEBOOK_PAGE_TOKEN}")
 
@@ -269,11 +270,22 @@ jobs:
             exit 1
           fi
 
-          # Step 2: Wait for processing
-          sleep 10
+          # Step 2: Poll container status until FINISHED (max 5 attempts, 1 per 15s)
+          for i in 1 2 3 4 5; do
+            sleep 15
+            STATUS_RESPONSE=$(curl -s "https://graph.facebook.com/v21.0/${CREATION_ID}?fields=status_code&access_token=${FACEBOOK_PAGE_TOKEN}")
+            STATUS=$(echo "$STATUS_RESPONSE" | jq -r '.status_code // empty')
+            echo "Container status (attempt $i): $STATUS"
+            if [ "$STATUS" = "FINISHED" ]; then
+              break
+            elif [ "$STATUS" = "ERROR" ] || [ "$STATUS" = "EXPIRED" ]; then
+              echo "Container failed: $STATUS_RESPONSE"
+              exit 1
+            fi
+          done
 
           # Step 3: Publish
-          PUBLISH_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v19.0/${INSTAGRAM_ACCOUNT_ID}/media_publish" \
+          PUBLISH_RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v21.0/${INSTAGRAM_ACCOUNT_ID}/media_publish" \
             -d "creation_id=${CREATION_ID}" \
             -d "access_token=${FACEBOOK_PAGE_TOKEN}")
 
